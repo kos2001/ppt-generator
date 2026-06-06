@@ -1,0 +1,26 @@
+{
+  "skill_name": "ppt-generator",
+  "evals": [
+    {
+      "id": 0,
+      "name": "topic-only-pitch",
+      "prompt": "Make me a 10-slide investor pitch deck for a startup called 'RootCellar' — a subscription box that delivers seasonal local produce. Use a punchy, energetic style.",
+      "expected_output": "A valid .pptx of ~10 slides using the vibrant (or similar energetic) template, with a title, problem/solution, metrics or market chart, and a closing slide. Varied layouts, not all bullets.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "doc-to-deck",
+      "prompt": "Turn these notes into a clean corporate deck:\n\nQ3 engineering update. Shipped the new search backend (40% faster p95 latency). Migrated 3 of 5 services to the new platform. Incident count down from 12 to 4 quarter over quarter. Next quarter: finish migration, launch the public API, hire 2 SREs.",
+      "expected_output": "A valid .pptx in the corporate template that faithfully uses the given facts (40% faster, 12->4 incidents, 3 of 5 migrated) — ideally a metrics or chart slide for the numbers — without inventing data, plus a forward-looking 'next quarter' slide.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "restyle-template",
+      "prompt": "I have a deck spec for a research talk on coral reef bleaching. Build it in the academic template, about 8 slides, fairly text-dense since it's for a conference audience. Cover background, methods, findings, and implications.",
+      "expected_output": "A valid .pptx in the academic template (~8 slides) using section dividers and content/bullets layouts appropriate for a dense scholarly talk, with a sensible structure (background -> methods -> findings -> implications).",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "template": "dark",
+  "title": "PPT Generator",
+  "footer": "ppt-generator skill",
+  "slide_numbers": true,
+  "slides": [
+    {
+      "layout": "title",
+      "eyebrow": "Claude Code Skill",
+      "title": "PPT Generator",
+      "subtitle": "Turn an idea into a finished, editable deck — in any visual style",
+      "author": "Built with Claude Code",
+      "date": "June 2026"
+    },
+    {
+      "layout": "content",
+      "eyebrow": "The Idea",
+      "title": "Separate what you say from how it looks",
+      "body": [
+        "You write the content once as a structured spec — what goes on each slide and which layout carries it. A renderer turns that into a native PowerPoint file.",
+        "Because content and style are separate, the same deck can be re-rendered in any template by changing a single field. No design work repeated, no copy-paste reformatting."
+      ]
+    },
+    {
+      "layout": "metrics",
+      "eyebrow": "At a Glance",
+      "title": "One spec, many decks",
+      "metrics": [
+        {"value": "5", "label": "Templates", "sublabel": "swap with one field"},
+        {"value": "12", "label": "Layouts", "sublabel": "for every slide job"},
+        {"value": "1", "label": "JSON spec", "sublabel": "single source of truth"},
+        {"value": "100%", "label": "Editable", "sublabel": "real .pptx output"}
+      ]
+    },
+    {
+      "layout": "bullets",
+      "eyebrow": "Workflow",
+      "title": "Five steps from idea to file",
+      "lead": "The skill does the content design, not just text dumping.",
+      "bullets": [
+        {"text": "Understand the topic, audience, and length", "bold": true},
+        {"text": "Pick a template that matches the tone", "bold": true},
+        {"text": "Design slides as a JSON spec", "bold": true},
+        {"text": "Choosing the right layout per slide is the craft", "level": 1},
+        {"text": "Validate, then render to .pptx", "bold": true},
+        {"text": "Verify and iterate — restyle or refine in seconds", "bold": true}
+      ]
+    },
+    {
+      "layout": "comparison",
+      "title": "Two halves of every deck",
+      "left": {
+        "heading": "Content — the spec",
+        "bullets": [
+          "What each slide says",
+          "Which layout carries it",
+          "The structure and story",
+          "Written once, stays stable"
+        ]
+      },
+      "right": {
+        "heading": "Look — the template",
+        "bullets": [
+          "Color palette and fonts",
+          "Accent treatment",
+          "Applied uniformly",
+          "Swapped in one field"
+        ]
+      }
+    },
+    {
+      "layout": "table",
+      "eyebrow": "Templates",
+      "title": "Pick a look to fit the room",
+      "table": {
+        "header": ["Template", "Look", "Best for"],
+        "rows": [
+          ["corporate", "Navy + orange on white", "Business, exec, sales"],
+          ["minimal", "Black on white, whitespace", "Design-forward, product"],
+          ["dark", "Dark slate + mint accent", "Tech keynotes, demos"],
+          ["vibrant", "Purple + coral, bold", "Pitches, marketing"],
+          ["academic", "Serif, muted, dense", "Lectures, research"]
+        ]
+      }
+    },
+    {
+      "layout": "two_column",
+      "eyebrow": "Layouts",
+      "title": "A layout for every job",
+      "left": {
+        "heading": "Framing & text",
+        "bullets": [
+          "title, section, closing",
+          "bullets, content",
+          "two_column, comparison",
+          "quote"
+        ]
+      },
+      "right": {
+        "heading": "Data & visuals",
+        "bullets": [
+          "metrics — KPI cards",
+          "table — data grids",
+          "chart — editable charts",
+          "image — pictures + text"
+        ]
+      }
+    },
+    {
+      "layout": "chart",
+      "eyebrow": "Coverage",
+      "title": "Twelve layouts across three jobs",
+      "chart": {
+        "type": "column",
+        "categories": ["Framing", "Text & structure", "Data & visuals"],
+        "series": [3, 5, 4],
+        "series_name": "Layouts",
+        "data_labels": true
+      }
+    },
+    {
+      "layout": "quote",
+      "quote": "Slides support the speaker — they aren't the document. One idea per slide, lead with the point.",
+      "attribution": "The skill's design guidance"
+    },
+    {
+      "layout": "content",
+      "eyebrow": "Origins",
+      "title": "Inspired by Presenton, runs fully local",
+      "body": [
+        "The open-source Presenton project pioneered the pipeline: AI-generated content feeds a structured layout, which a renderer turns into the final file.",
+        "This skill keeps that pipeline but drops the server — it produces real, editable PowerPoint directly through python-pptx, on your own machine, with no API or service required."
+      ]
+    },
+    {
+      "layout": "closing",
+      "title": "Make a deck",
+      "subtitle": "Just describe the topic — the skill handles the rest."
+    }
+  ]
+}
