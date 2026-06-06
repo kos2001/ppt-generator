@@ -1,0 +1,169 @@
+{
+  "template": "report",
+  "title": "PPT Generator",
+  "slide_numbers": true,
+  "slides": [
+    {
+      "layout": "title",
+      "eyebrow": "Claude Code Skill",
+      "title": "PPT Generator",
+      "subtitle": "Turn an idea into a finished, editable deck — in any visual style",
+      "author": "Built with Claude Code",
+      "date": "June 2026"
+    },
+    {
+      "layout": "bullets",
+      "eyebrow": "The Idea",
+      "title": "The Content–Look Split",
+      "subtitle": "Write the words once; the look is a setting you flip anytime.",
+      "bullets": [
+        {"text": "Content as a structured spec — authored once", "bold": true},
+        {"text": "Renderer → native PowerPoint file", "bold": true},
+        {"text": "Content and style fully separate", "bold": true},
+        {"text": "Any template via a one-field change", "bold": true},
+        {"text": "No repeated design, no reformatting", "bold": true}
+      ]
+    },
+    {
+      "layout": "metrics",
+      "eyebrow": "At a Glance",
+      "title": "One Spec, Many Decks",
+      "subtitle": "A single JSON file drives every slide — and every template.",
+      "metrics": [
+        {"value": "6", "label": "Templates", "sublabel": "one-field swap"},
+        {"value": "13", "label": "Layouts", "sublabel": "for every slide job"},
+        {"value": "1", "label": "JSON spec", "sublabel": "single source of truth"},
+        {"value": "100%", "label": "Editable", "sublabel": "real .pptx output"}
+      ]
+    },
+    {
+      "layout": "bullets",
+      "eyebrow": "Workflow",
+      "title": "Five Steps from Idea to File",
+      "subtitle": "The skill does the content design, not just text dumping.",
+      "bullets": [
+        {"text": "Topic, audience, and length", "bold": true},
+        {"text": "Template matched to tone", "bold": true},
+        {"text": "Slides as a JSON spec", "bold": true},
+        {"text": "Right layout per slide — the craft", "level": 1},
+        {"text": "Validation, then render", "bold": true},
+        {"text": "Fast restyle and refinement", "bold": true}
+      ]
+    },
+    {
+      "layout": "diagram",
+      "eyebrow": "Workflow",
+      "title": "The Five-Step Workflow",
+      "subtitle": "Drawn as real PowerPoint shapes, so every box stays editable.",
+      "diagram": {
+        "type": "process",
+        "nodes": [
+          {"title": "Understand", "desc": "Topic & audience"},
+          {"title": "Template", "desc": "Pick the look"},
+          {"title": "Design", "desc": "Author the spec"},
+          {"title": "Render", "desc": "Validate & build"},
+          {"title": "Iterate", "desc": "Restyle & refine"}
+        ]
+      }
+    },
+    {
+      "layout": "comparison",
+      "title": "Two Halves of Every Deck",
+      "subtitle": "Content stays put; the template carries the design.",
+      "left": {
+        "heading": "Content — the spec",
+        "bullets": [
+          "Each slide's words",
+          "Layout per slide",
+          "Structure and story",
+          "Written once, stable"
+        ]
+      },
+      "right": {
+        "heading": "Look — the template",
+        "bullets": [
+          "Color palette and fonts",
+          "Accent treatment",
+          "Uniform across all slides",
+          "One-field swap"
+        ]
+      }
+    },
+    {
+      "layout": "table",
+      "eyebrow": "Templates",
+      "title": "A Look for Every Room",
+      "subtitle": "Six built-in templates, each tuned to a different audience.",
+      "table": {
+        "header": ["Template", "Look", "Best for"],
+        "rows": [
+          ["corporate", "Navy + orange on white", "Business, exec, sales"],
+          ["minimal", "Black on white, whitespace", "Design-forward, product"],
+          ["dark", "Dark slate + mint accent", "Tech keynotes, demos"],
+          ["vibrant", "Purple + coral, bold", "Pitches, marketing"],
+          ["academic", "Serif, muted, dense", "Lectures, research"],
+          ["report", "Black header, page numbers", "Formal, confidential"]
+        ]
+      }
+    },
+    {
+      "layout": "two_column",
+      "eyebrow": "Layouts",
+      "title": "A Layout for Every Job",
+      "subtitle": "Thirteen layouts so the slide fits the message, not the reverse.",
+      "left": {
+        "heading": "Framing & text",
+        "bullets": [
+          "title, section, closing",
+          "bullets, content",
+          "two_column, comparison",
+          "quote"
+        ]
+      },
+      "right": {
+        "heading": "Data & visuals",
+        "bullets": [
+          "metrics — KPI cards",
+          "table — data grids",
+          "chart, diagram",
+          "image — pictures + text"
+        ]
+      }
+    },
+    {
+      "layout": "chart",
+      "eyebrow": "Coverage",
+      "title": "Layouts Across Three Jobs",
+      "subtitle": "Framing, text, and data — all covered from one spec.",
+      "chart": {
+        "type": "column",
+        "categories": ["Framing", "Text & structure", "Data & visuals"],
+        "series": [3, 5, 5],
+        "series_name": "Layouts",
+        "data_labels": true
+      }
+    },
+    {
+      "layout": "quote",
+      "quote": "Slides support the speaker — they aren't the document. One idea per slide.",
+      "attribution": "The skill's design guidance"
+    },
+    {
+      "layout": "bullets",
+      "eyebrow": "Origins",
+      "title": "Presenton Roots, Local Engine",
+      "subtitle": "Same content-first pipeline — fully local, no server.",
+      "bullets": [
+        {"text": "Presenton's pipeline: content → layout → render", "bold": true},
+        {"text": "Same approach, no server", "bold": true},
+        {"text": "Editable .pptx via python-pptx", "bold": true},
+        {"text": "Fully local — no API, no data egress", "bold": true}
+      ]
+    },
+    {
+      "layout": "closing",
+      "title": "Your Next Deck",
+      "subtitle": "Just describe the topic — the skill handles the rest."
+    }
+  ]
+}

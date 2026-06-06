@@ -1,0 +1,14 @@
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Skill-creator eval/test workspace (regenerated, not source)
+ppt-generator-workspace/
+
+# Scratch
+/tmp/
+*.tmp

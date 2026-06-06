@@ -1,0 +1,119 @@
+{
+  "template": "corporate",
+  "title": "Q4 Business Review",
+  "footer": "Acme Inc. — Confidential",
+  "slide_numbers": true,
+  "slides": [
+    {
+      "layout": "title",
+      "eyebrow": "Quarterly Review",
+      "title": "Q4 Business Review",
+      "subtitle": "Performance, learnings, and the plan for next year",
+      "author": "Jordan Lee, VP Strategy",
+      "date": "December 2025"
+    },
+    {
+      "layout": "section",
+      "number": "01",
+      "title": "Current Standing",
+      "subtitle": "The headline numbers for the quarter"
+    },
+    {
+      "layout": "metrics",
+      "title": "Quarter at a Glance",
+      "eyebrow": "Performance",
+      "subtitle": "A strong close to the year across every headline metric.",
+      "metrics": [
+        {"value": "$4.2M", "label": "Revenue", "sublabel": "+18% YoY"},
+        {"value": "1,240", "label": "New Customers", "sublabel": "+9% QoQ"},
+        {"value": "94%", "label": "Retention", "sublabel": "Best on record"},
+        {"value": "31", "label": "NPS", "sublabel": "+6 points"}
+      ]
+    },
+    {
+      "layout": "bullets",
+      "title": "Result Drivers",
+      "eyebrow": "Analysis",
+      "subtitle": "Three factors explain most of the upside.",
+      "bullets": [
+        {"text": "Enterprise above plan", "bold": true},
+        {"text": "Contract value +22%", "level": 1},
+        {"text": "Two flagship logos in November", "level": 1},
+        {"text": "Self-serve conversion up", "bold": true},
+        {"text": "Onboarding: time-to-value halved", "level": 1}
+      ]
+    },
+    {
+      "layout": "chart",
+      "title": "Revenue by Quarter",
+      "eyebrow": "Trend",
+      "chart": {
+        "type": "column",
+        "categories": ["Q1", "Q2", "Q3", "Q4"],
+        "series": [
+          {"name": "2024", "values": [2.8, 3.0, 3.3, 3.6]},
+          {"name": "2025", "values": [3.4, 3.7, 3.9, 4.2]}
+        ],
+        "data_labels": false
+      }
+    },
+    {
+      "layout": "two_column",
+      "title": "Wins and Watch-outs",
+      "left": {
+        "heading": "Wins",
+        "bullets": ["Tighter ICP targeting", "Faster sales cycle", "Higher expansion revenue"]
+      },
+      "right": {
+        "heading": "Watch-outs",
+        "bullets": ["Rising support load", "Infra cost per customer", "EMEA hiring lag"]
+      }
+    },
+    {
+      "layout": "comparison",
+      "title": "Old Plan vs. New Plan",
+      "left": {
+        "heading": "Original 2026 Plan",
+        "bullets": ["Flat headcount", "Single-region focus", "Conservative targets"]
+      },
+      "right": {
+        "heading": "Revised 2026 Plan",
+        "bullets": ["EMEA team investment", "Two new regions", "Stretch revenue goal"]
+      }
+    },
+    {
+      "layout": "table",
+      "title": "Top Accounts",
+      "table": {
+        "header": ["Account", "ARR", "Status", "Owner"],
+        "rows": [
+          ["Globex", "$640K", "Renewed", "Priya"],
+          ["Initech", "$410K", "Expansion", "Marco"],
+          ["Umbrella", "$380K", "At risk", "Dana"],
+          ["Soylent", "$295K", "New", "Priya"]
+        ]
+      }
+    },
+    {
+      "layout": "quote",
+      "quote": "The onboarding change alone paid for the whole redesign in one quarter.",
+      "attribution": "Head of Customer Success"
+    },
+    {
+      "layout": "bullets",
+      "title": "The Year Ahead",
+      "eyebrow": "Outlook",
+      "subtitle": "Convert this momentum into durable, repeatable growth.",
+      "bullets": [
+        {"text": "Enterprise expansion as the primary engine", "bold": true},
+        {"text": "Continued self-serve funnel investment", "bold": true},
+        {"text": "Data-led focus, not one-off wins", "bold": true}
+      ]
+    },
+    {
+      "layout": "closing",
+      "title": "Questions?",
+      "subtitle": "jordan.lee@acme.example  ·  #q4-review"
+    }
+  ]
+}
