@@ -1,16 +1,22 @@
 ---
 name: ppt-generator
 description: >-
-  Generate complete, editable PowerPoint (.pptx) presentations from a topic,
-  outline, notes, or source document, rendered in a chosen visual template.
-  Use this skill WHENEVER the user wants to create, build, make, or draft a
-  slide deck / presentation / PPT / PPTX / slides / "발표 자료" / pitch deck /
-  keynote — even if they only describe the topic ("make slides about X",
-  "turn this doc into a deck", "I need a 10-slide pitch for investors") and
-  don't mention a tool or file format. Also use when the user wants to restyle
-  an existing deck into a different template/theme, or asks for a specific
-  look (corporate, minimal, dark, vibrant, academic). Produces a real, fully
-  editable .pptx via python-pptx — not a description of one.
+  Create, read, or edit PowerPoint (.pptx) decks. CREATE complete editable
+  presentations from a topic, outline, notes, or source document in a chosen
+  visual template — use WHENEVER the user wants to create, build, make, or
+  draft a slide deck / presentation / PPT / PPTX / slides / "발표 자료" /
+  "자료 만들어" / pitch deck / keynote, even if they only give the topic
+  ("make slides about X", "turn this doc into a deck", "투자자용 10장 피치").
+  EDIT or MODIFY an existing .pptx in place ("이 파일 수정해줘", "edit this
+  deck", "fix the title", "swap the logo", "update the chart numbers"):
+  replace text (formatting preserved), set/add text boxes, edit tables and
+  chart data, replace/add/refit images, delete or reorder slides — keeping the
+  original design. FIT images to a fixed template box or placeholder without
+  distortion ("템플릿 크기에 맞춰 이미지 넣어줘"). RESTYLE / re-render a deck
+  into another template or look (corporate, minimal, dark, vibrant, academic;
+  "다른 템플릿으로", "이 템플릿으로 바꿔줘"). READ / EXTRACT a deck's text,
+  tables, chart data, and images ("내용 추출", "이 ppt 읽어줘"). Produces a
+  real, fully editable .pptx via python-pptx — not a description of one.
 ---
 
 # PPT Generator
@@ -24,6 +30,11 @@ field.
 This mirrors how AI presentation tools like Presenton work — content generation
 feeds a structured layout, which a renderer turns into the final file — but it
 runs fully locally with no server.
+
+The skill works in two directions:
+- **Generate** a new deck from a presentation spec (the main workflow below).
+- **Read / edit** an existing `.pptx` — extract its content, or modify it in
+  place without disturbing the design (see "Reading and editing existing decks").
 
 ## When to use this
 
@@ -40,6 +51,11 @@ for image fitting. Check and install if missing:
 ```bash
 python3 -c "import pptx" 2>/dev/null || pip install python-pptx Pillow
 ```
+
+Optional, only for visual QA (`scripts/thumbnail.py`): LibreOffice (`soffice`)
+to convert `.pptx`→PDF, plus `pdftoppm` (poppler) or PyMuPDF to rasterize it.
+The reading/editing scripts (`extract_pptx.py`, `inspect_pptx.py`,
+`edit_pptx.py`, `ooxml.py`) need only `python-pptx` + Pillow.
 
 ## Workflow
 
@@ -111,19 +127,92 @@ chart/table data. Fix any errors it prints before rendering.
 ### 5. Verify and iterate
 
 State the real outcome: how many slides, which template, where the file is.
-Don't claim it "looks great" — you can't see it render. If LibreOffice is
-available (`soffice`), you can generate thumbnails to inspect:
+Don't claim it "looks great" — you can't see it render. For visual QA, render a
+contact-sheet grid of every slide and inspect it (needs LibreOffice plus
+`pdftoppm` or PyMuPDF):
 
 ```bash
-soffice --headless --convert-to pdf --outdir /tmp deck.pptx   # then view the PDF
+python3 scripts/thumbnail.py deck.pptx          # -> deck.grid.png (+ per-slide PNGs)
 ```
 
-Otherwise, tell the user to open it in PowerPoint/Keynote and offer concrete
-next steps: adjust length, swap the template (one-field change → re-render),
-tighten wording, add a chart, etc.
+Open the grid to catch text cutoff, overflow, or clashing colors. If LibreOffice
+isn't installed, the script says so — then tell the user to open the file in
+PowerPoint/Keynote and offer concrete next steps: adjust length, swap the
+template (one-field change → re-render), tighten wording, add a chart, etc.
 
 To **restyle** an existing deck into another look, change only the top-level
 `template` field in the spec and re-render — content is untouched.
+
+## Reading and editing existing decks
+
+Besides generating new decks, the skill can read an existing `.pptx` and modify
+it in place — keeping every untouched shape, image, and bit of formatting.
+
+> Works on ordinary, unprotected `.pptx` only. A DRM-protected file must first
+> be exported to a plaintext copy through its DRM client by an authorized user;
+> these tools do not bypass DRM.
+
+**Read / extract** content:
+
+```bash
+python3 scripts/inspect_pptx.py deck.pptx          # map slides + addressable shapes
+python3 scripts/extract_pptx.py deck.pptx           # text + tables + chart data (markdown)
+python3 scripts/extract_pptx.py deck.pptx --images ./imgout --json
+```
+
+`extract_pptx.py` pulls text, tables, **chart data** (type, categories, series),
+and embedded images; `inspect_pptx.py` also reports each chart's type and
+series/category counts.
+
+`inspect_pptx.py` is the starting point for edits — it prints each shape's
+`(slide, shape)` address, type, and text so you know what to target.
+
+**Edit** in place via a JSON *edit spec* (schema in `references/edit-spec.md`).
+Validate it first — `validate_spec.py` auto-detects an edit spec and checks op
+names, required fields, fit modes, and chart values:
+
+```bash
+python3 scripts/validate_spec.py edits.json         # catches mistakes early
+python3 scripts/edit_pptx.py edits.json             # source/output from spec
+python3 scripts/edit_pptx.py edits.json -i in.pptx -o out.pptx
+```
+
+Supported operations: `replace_text` (formatting-preserving find/replace across
+runs), `set_text`, `set_table_cell`, `set_chart_data` (replace a chart's
+categories/series in place), `replace_image`, `add_image`, `add_textbox` (add
+new text), `delete_shape`, and slide-level `delete_slide` / `move_slide`.
+`replace_text` is the safest bulk edit — it matches by content, so it is
+unaffected by shape indices. Structural ops (delete/move slide, delete shape)
+shift indices, so order them last or re-inspect between edits.
+
+Images are fitted to a **fixed box** without distortion: `add_image` places into
+a template placeholder (`into_shape`) or inch box, `replace_image` keeps the
+existing picture's frame, and `fit_image` resizes a picture already on the slide
+to a box — defaulting to the whole slide, so it snaps full-page images to fill
+the slide template exactly. All take a `fit` mode (`contain` = letterbox inside,
+`cover` = fill and crop, `stretch`).
+
+Editing preserves the original design. To instead **restyle** a deck into a
+different template, use the generation path: change the `template` field in a
+presentation spec and re-render.
+
+**Image-only decks.** Some decks are slides exported as one full-page image each
+(common with translated or design-tool exports) — `inspect_pptx.py` shows every
+shape as `PICTURE` with no text. There is no text to edit. Options: refit the
+images to the slide template with `fit_image`; wrap each image in a template
+(header/footer chrome via `add_image into_shape` + `add_textbox`); replace
+images; or, to get editable text, recreate the content as a spec and re-render
+(the generation path). Don't promise text edits on such a deck.
+
+**Escape hatch — raw OOXML.** For changes python-pptx can't reach (theme colors,
+slide-master tweaks, custom geometry), unpack the deck to its XML tree, edit the
+XML, and repack:
+
+```bash
+python3 scripts/ooxml.py unpack deck.pptx unpacked/   # XML pretty-printed
+# …edit files under unpacked/ppt/… …
+python3 scripts/ooxml.py pack   unpacked/ out.pptx
+```
 
 ## Output conventions
 
