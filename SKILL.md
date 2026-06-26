@@ -31,17 +31,42 @@ This mirrors how AI presentation tools like Presenton work — content generatio
 feeds a structured layout, which a renderer turns into the final file — but it
 runs fully locally with no server.
 
-The skill works in two directions:
-- **Generate** a new deck from a presentation spec (the main workflow below).
-- **Read / edit** an existing `.pptx` — extract its content, or modify it in
-  place without disturbing the design (see "Reading and editing existing decks").
-
 ## When to use this
 
-Any request to create, draft, or restyle a slide deck / presentation / PPT.
-The user usually gives you a topic, an outline, rough notes, or a document and
-expects slides back. Your job is to do the *content design* (what each slide
-says and which layout carries it best), then render it.
+Any request to create, draft, restyle, read, or edit a slide deck / presentation
+/ PPT. The user gives you a topic, an outline, notes, a document, or an existing
+`.pptx`, and expects slides back.
+
+## Two modes — establish which one first
+
+This skill does two **independent** jobs that share nothing but the file format.
+Decide which the request needs *before* touching any tool, because the workflow,
+scripts, and even the failure modes differ completely:
+
+- **Mode A · Generate from a layout** — build a brand-new deck from a topic /
+  outline / notes / source document, laid out into a chosen template. You do the
+  content design (what each slide says, which layout carries it) and render a
+  fresh `.pptx` from a spec. → **Mode A workflow** below.
+- **Mode B · Work on an existing deck** — read or modify a `.pptx` the user
+  already has, *keeping its design*: extract its content, or replace text, edit
+  tables/charts, refit images, duplicate/reorder slides in place. → **Mode B
+  workflow** below.
+
+**How to pick.** If the request clearly implies one mode, go straight to it
+("make slides about Q4 churn" → A; "fix the date in deck.pptx" → B). If it's
+ambiguous — the user just points at a file without saying what to do, asks for
+something that could be either ("이 내용으로 발표자료 만들어줘" when a `.pptx`
+is attached), or names both creating and an existing file — **ask before
+starting**:
+
+> "두 가지로 진행할 수 있어요 — (A) 레이아웃에 맞춰 **새 덱을 생성**할까요, 아니면
+> (B) **기존 파일을 수정**할까요?"
+
+Why the choice comes first: generating re-renders the whole deck from a spec, so
+it *replaces* the original design; editing preserves every untouched shape and
+bit of formatting. Picking the wrong mode silently discards exactly what the
+user meant to keep (or rebuilds something they wanted made fresh) — so the two
+flows stay separate and you commit to one.
 
 ## Requirements
 
@@ -52,25 +77,48 @@ for image fitting. Check and install if missing:
 python3 -c "import pptx" 2>/dev/null || pip install python-pptx Pillow
 ```
 
+> **Windows:** `python3` is often a Microsoft Store stub that prints nothing and
+> exits — use `python` or `py` instead (e.g. `py -c "import pptx"`). Substitute
+> it in every `python3 …` command below. Paths with backslashes also need
+> forward slashes or doubled backslashes inside JSON specs.
+
 Optional, only for visual QA (`scripts/thumbnail.py`): LibreOffice (`soffice`)
 to convert `.pptx`→PDF, plus `pdftoppm` (poppler) or PyMuPDF to rasterize it.
 The reading/editing scripts (`extract_pptx.py`, `inspect_pptx.py`,
 `edit_pptx.py`, `ooxml.py`) need only `python-pptx` + Pillow.
 
-## Workflow
+## Mode A — Generate a deck from a layout
 
-### 1. Understand the content and audience
+### 1. Confirm the brief before building
 
-Before writing slides, get clear on:
+A deck is expensive to redo: the template, length, audience, and key message
+shape *every* slide, so guessing them wrong means rebuilding the whole thing.
+The reader almost always has these in their head but doesn't volunteer them.
+So **confirm the brief before you render** — don't silently pick defaults and
+generate. Get clear on:
+
 - **Topic & key message** — what should the audience remember?
 - **Audience & setting** — execs, investors, students, a team? Big screen?
-- **Length** — how many slides (default to a tight 8–14 if unspecified).
+- **Length** — how many slides?
+- **Template / look** — default to the user's house style if they have one
+  (this user uses **`samsung`** only — don't ask, just use it). Otherwise
+  confirm one of `corporate`, `minimal`, `dark`, `vibrant`, `samsung`, `report`,
+  `academic` (see `references/templates.md`). The renderer default is `samsung`.
 - **Source material** — if the user gave a document/notes, read it and extract
   the structure; don't invent facts that aren't there.
 
-If the request is vague ("make me a deck about our roadmap"), make reasonable
-choices and proceed — produce a solid draft rather than stalling on questions.
-Ask only if something genuinely blocks you (e.g. no topic at all).
+**What to do:** ask for whatever the request didn't already specify *and that
+isn't fixed by a house style*, in **one short consolidated question** (not an
+interrogation) — e.g. "몇 장 정도로, 누구 대상으로 만들까요?" — with your
+recommended default offered as the first option so it's a one-tap confirm. Then
+build. Skip the question
+only when the user already gave the essentials, attached a spec, or explicitly
+said to just go ahead ("알아서 만들어줘", "draft something") — in that case pick
+sensible defaults (tight 8–14 slides, `corporate`) and proceed, naming the
+choices you made so they can correct course.
+
+The point isn't to stall — it's that a 30-second confirm beats regenerating 15
+slides in the wrong template or length. When in doubt, ask.
 
 ### 2. Choose a template
 
@@ -143,14 +191,35 @@ template (one-field change → re-render), tighten wording, add a chart, etc.
 To **restyle** an existing deck into another look, change only the top-level
 `template` field in the spec and re-render — content is untouched.
 
-## Reading and editing existing decks
+## Mode B — Work on an existing deck
 
-Besides generating new decks, the skill can read an existing `.pptx` and modify
-it in place — keeping every untouched shape, image, and bit of formatting.
+This mode reads an existing `.pptx` and modifies it in place — keeping every
+untouched shape, image, and bit of formatting. Use it whenever the user has a
+file already and wants it changed rather than rebuilt.
 
 > Works on ordinary, unprotected `.pptx` only. A DRM-protected file must first
 > be exported to a plaintext copy through its DRM client by an authorized user;
 > these tools do not bypass DRM.
+
+**DRM-protected decks.** Enterprise document-security DRM (e.g. Fasoo, MarkAny,
+Softcamp — common in Korean corporations) encrypts the file so python-pptx can't
+open it; `extract_pptx.py`/`inspect_pptx.py` will fail. **Do not help bypass or
+crack the protection** — that defeats an intentional security control and
+typically violates company policy and law. Refuse requests to circumvent it,
+even when the user clearly has access. Instead, the first step is always to
+obtain an *authorized* unprotected rendering, then proceed normally:
+
+1. **Authorized export** — use the DRM client's decrypt / 반출(export) workflow
+   (often needs manager/security approval). The result is a normal `.pptx`.
+2. **Ask the owner / security admin** for an authorized plaintext copy if you're
+   not the document owner.
+3. **Export from a licensed viewer** — if you may view it and policy permits,
+   save-as or export slides to images/PDF, then process those (image-only path).
+
+If printing/export/capture is blocked by policy, that block is the intended
+control — go through the approval process, don't work around it. Once an
+unprotected copy or its images exist, the read/edit and image-only workflows
+here apply unchanged.
 
 **Read / extract** content:
 
@@ -180,10 +249,14 @@ python3 scripts/edit_pptx.py edits.json -i in.pptx -o out.pptx
 Supported operations: `replace_text` (formatting-preserving find/replace across
 runs), `set_text`, `set_table_cell`, `set_chart_data` (replace a chart's
 categories/series in place), `replace_image`, `add_image`, `add_textbox` (add
-new text), `delete_shape`, and slide-level `delete_slide` / `move_slide`.
+new text), `delete_shape`, and slide-level `duplicate_slide` /
+`delete_slide` / `move_slide`. `duplicate_slide` copies a slide and its images
+N times — the primitive for wrapping an image-only deck in a fixed template
+(duplicate one chrome-only frame slide per image, then `add_image` into each;
+see `references/edit-spec.md`).
 `replace_text` is the safest bulk edit — it matches by content, so it is
-unaffected by shape indices. Structural ops (delete/move slide, delete shape)
-shift indices, so order them last or re-inspect between edits.
+unaffected by shape indices. Structural ops (duplicate/delete/move slide, delete
+shape) shift indices, so order them last or re-inspect between edits.
 
 Images are fitted to a **fixed box** without distortion: `add_image` places into
 a template placeholder (`into_shape`) or inch box, `replace_image` keeps the
@@ -197,12 +270,39 @@ different template, use the generation path: change the `template` field in a
 presentation spec and re-render.
 
 **Image-only decks.** Some decks are slides exported as one full-page image each
-(common with translated or design-tool exports) — `inspect_pptx.py` shows every
-shape as `PICTURE` with no text. There is no text to edit. Options: refit the
-images to the slide template with `fit_image`; wrap each image in a template
-(header/footer chrome via `add_image into_shape` + `add_textbox`); replace
-images; or, to get editable text, recreate the content as a spec and re-render
-(the generation path). Don't promise text edits on such a deck.
+(common with NotebookLM, translated, or design-tool exports) — `inspect_pptx.py`
+shows every slide as a single `PICTURE` with no text. There is **no text to
+edit**, so don't promise text edits; pick a path by what the user actually wants:
+
+| Goal | Path | Editable text? |
+|------|------|----------------|
+| Fix wording / restyle / make it editable | Recreate content as a spec → re-render (**Mode A**). View each image, transcribe its title/bullets/table into the spec, map to the layout that fits (comparison, diagram, table…), keep the slide count. | ✅ yes |
+| Just tidy sizing — snap images to the slide cleanly | `fit_image` (Mode B), default box = whole slide | ❌ no |
+| Wrap each image in a template's chrome (header/logo/footer) | **`scripts/wrap_images.py`** — one command does it end-to-end (see below). Internally: chrome-only frame deck → `add_image` each picture into the body, fitted. | ❌ no |
+| Swap a picture for a new one | `replace_image` (Mode B), keeps the frame | ❌ no |
+
+The recreate path is the only one that yields editable text — everything in the
+pixels stays baked in. For bulk transcription, OCR (Tesseract/PaddleOCR) can
+seed a first draft, but verify it against the image: OCR mangles diagram labels
+and Korean text, so a vision pass is still needed.
+
+**Wrapping images in a template frame — `scripts/wrap_images.py`.** The "wrap in
+chrome" path is bundled as one command, so you don't re-orchestrate it each time:
+
+```bash
+# from an image-only deck (one picture per slide):
+python scripts/wrap_images.py --from-pptx deck.pptx --template samsung \
+    --eyebrow "PROJECT NAME" --footer "Confidential" -o out.pptx
+# or from a folder of images (natural-sorted slide1, slide2, … slide10):
+python scripts/wrap_images.py --images ./imgs --template samsung -o out.pptx
+```
+
+It renders a chrome-only frame deck in the chosen template (header bar, brand
+marker, page numbers), then fits each image into the body (`--fit contain`
+default, `cover` to fill-and-crop). Output slide count = number of images, so
+the deck's length is preserved. Use `--eyebrow` for a running label in the bar
+and `--footer` for footer text. It does **not** make text editable — for that,
+use the recreate path above.
 
 **Escape hatch — raw OOXML.** For changes python-pptx can't reach (theme colors,
 slide-master tweaks, custom geometry), unpack the deck to its XML tree, edit the
@@ -226,5 +326,8 @@ python3 scripts/ooxml.py pack   unpacked/ out.pptx
 - New template: copy an entry in `scripts/templates.py`, adjust palette/fonts.
 - New layout: add a `layout_*` function in `scripts/build_pptx.py` and register
   it in the `LAYOUTS` dict; document it in `references/layouts.md`.
+- New edit op: add an `op_*` in `scripts/edit_pptx.py` and register it in `OPS`;
+  add a validation branch in `scripts/validate_spec.py` (`VALID_OPS` + the
+  per-op checks); document it in `references/edit-spec.md`.
 - Images: pass a local file path in an `image` slide; a missing path renders a
   labeled placeholder so the build never fails mid-deck.

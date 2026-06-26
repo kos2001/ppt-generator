@@ -185,6 +185,38 @@ Adds new text onto a slide (vs `set_text`, which only edits an existing shape).
 {"op": "delete_shape", "slide": 4, "shape": 3}
 ```
 
+### `duplicate_slide` — copy a slide N times
+Clones a slide and everything on it — shapes, text, and **images** (the image
+relationships are remapped so the copies render correctly, which a naive XML
+copy gets wrong). Copies land immediately after the source slide by default, or
+at 1-based position `at`.
+
+```json
+{"op": "duplicate_slide", "slide": 2}                 // one copy, right after slide 2
+{"op": "duplicate_slide", "slide": 2, "count": 14}    // 14 copies (e.g. one frame per image)
+{"op": "duplicate_slide", "slide": 1, "count": 3, "at": 5}  // 3 copies starting at position 5
+```
+| Field | Required | Notes |
+|-------|----------|-------|
+| `slide` | yes | 1-based source slide to copy. |
+| `count` | no | Number of copies (default 1). |
+| `at` | no | 1-based position for the first copy (default: right after the source). |
+
+**Recipe — wrap an image-only deck in a fixed template.** This is the main use:
+you have N slide images and want each framed by a template's chrome (header bar,
+logo, footer). python-pptx can't add framed slides on its own, so:
+
+1. Open the template `.pptx`; pick one slide whose chrome you want as the frame.
+   Strip its body content with `delete_shape` so only the chrome remains (or
+   start from a slide that is already chrome-only).
+2. `duplicate_slide` that frame `count: N-1` times (you already have one) — or
+   delete the original content slides afterward and duplicate `count: N`.
+3. `add_image` each picture into the body region of each framed slide
+   (`fit: contain` keeps it undistorted).
+
+Because the frame slide and the image count rarely match, `duplicate_slide` is
+what makes "insert this image deck into our corporate template" actually work.
+
 ### `delete_slide` — remove a whole slide
 ```json
 {"op": "delete_slide", "slide": 5}
@@ -196,7 +228,7 @@ Moves the slide at `from` to position `to` (both 1-based).
 {"op": "move_slide", "from": 11, "to": 2}
 ```
 
-> **Ordering caveat:** `delete_slide`/`move_slide` change slide numbers, and
+> **Ordering caveat:** `duplicate_slide`/`delete_slide`/`move_slide` change slide numbers, and
 > `delete_shape`/`add_*` change shape indices. Put structural ops last, or
 > re-run `inspect_pptx.py` between edits. Content-matched ops (`replace_text`)
 > are immune to index shifts.

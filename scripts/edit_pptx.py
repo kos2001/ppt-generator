@@ -17,6 +17,8 @@ reported by inspect_pptx.py. Supported operations:
     replace_image  swap a picture's image bytes, keeping its position/size
     add_image      add a new picture to a slide at an inch-based position
     delete_shape   remove a shape
+    duplicate_slide copy a slide (and its images) N times — the primitive for
+                   replicating a template frame across many image slides
 
 Usage:
     python edit_pptx.py edits.json                 # source/output from spec
@@ -27,6 +29,7 @@ exported to a plaintext copy through its DRM client by an authorized user; this
 tool does not bypass DRM.
 """
 import argparse
+import copy
 import json
 import os
 import sys
@@ -35,6 +38,7 @@ from pptx import Presentation
 from pptx.util import Inches, Emu, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+from pptx.oxml.ns import qn
 
 _ALIGN = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
 
@@ -382,6 +386,69 @@ def op_delete_slide(prs, op):
     return "delete_slide %d" % n
 
 
+def _clone_media_rels(src_part, dst_part, new_el):
+    """After a deepcopy, rebind any relationship-id attributes (image embeds,
+    hyperlinks, etc.) so the cloned element points at *dst_part*'s own copy of
+    each related part — without this, a duplicated slide's pictures reference
+    rIds that don't exist on the new slide and render as broken/blank."""
+    rel_attrs = (qn("r:embed"), qn("r:link"), qn("r:id"))
+    for el in new_el.iter():
+        for attr in rel_attrs:
+            rId = el.get(attr)
+            if not rId or rId not in src_part.rels:
+                continue
+            rel = src_part.rels[rId]
+            if rel.is_external:
+                new_rId = dst_part.relate_to(rel.target_ref, rel.reltype, is_external=True)
+            else:
+                new_rId = dst_part.relate_to(rel.target_part, rel.reltype)
+            el.set(attr, new_rId)
+
+
+def op_duplicate_slide(prs, op):
+    """Duplicate an existing slide one or more times, copying every shape (and
+    its image/media relationships) verbatim. Copies land immediately after the
+    source slide by default, or at 1-based position `at`.
+
+    The missing primitive for wrapping an image-only deck in a fixed template:
+    prepare one frame slide (chrome only), duplicate it once per image, then
+    drop each image in with add_image. python-pptx has no built-in slide copy,
+    so this handles the shape clone + relationship remap that that needs.
+    """
+    src = _slide(prs, op["slide"])
+    count = int(op.get("count", 1))
+    if count < 1:
+        raise EditError("duplicate_slide: count must be >= 1")
+    lst = _sld_id_list(prs)
+    n_before = len(list(lst))
+    at = op.get("at")
+    if at is not None and not (1 <= at <= n_before + 1):
+        raise EditError("duplicate_slide: 'at' %d out of range (1..%d)"
+                        % (at, n_before + 1))
+    for _ in range(count):
+        new_slide = prs.slides.add_slide(src.slide_layout)
+        for shp in list(new_slide.shapes):  # drop placeholders the layout injects
+            shp._element.getparent().remove(shp._element)
+        # carry over a slide-level background override, if the source has one
+        src_bg = src._element.cSld.find(qn("p:bg"))
+        if src_bg is not None and new_slide._element.cSld.find(qn("p:bg")) is None:
+            new_slide._element.cSld.insert(0, copy.deepcopy(src_bg))
+        for shp in src.shapes:
+            new_el = copy.deepcopy(shp._element)
+            new_slide.shapes._spTree.append(new_el)
+            _clone_media_rels(src.part, new_slide.part, new_el)
+    # add_slide appends to the end; move the new copies into place
+    ids = list(lst)
+    new_ids = ids[n_before:]
+    insert_at = (at - 1) if at is not None else op["slide"]  # default: after source
+    for el in new_ids:
+        lst.remove(el)
+    for offset, el in enumerate(new_ids):
+        lst.insert(insert_at + offset, el)
+    return "duplicate_slide %d x%d%s" % (
+        op["slide"], count, "" if at is None else " at %d" % at)
+
+
 def op_move_slide(prs, op):
     frm, to = op["from"], op["to"]
     lst = _sld_id_list(prs)
@@ -406,6 +473,7 @@ OPS = {
     "add_image": op_add_image,
     "add_textbox": op_add_textbox,
     "delete_shape": op_delete_shape,
+    "duplicate_slide": op_duplicate_slide,
     "delete_slide": op_delete_slide,
     "move_slide": op_move_slide,
 }

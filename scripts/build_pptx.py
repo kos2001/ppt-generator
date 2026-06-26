@@ -174,6 +174,11 @@ def _header_accent(slide, theme, title, *, eyebrow=None):
 def _header_bar(slide, theme, title, *, eyebrow=None):
     bar_h = Inches(1.0)
     add_rect(slide, 0, 0, SLIDE_W, bar_h, fill_hex=theme["primary"])
+    # Optional thin rule directly under the bar (a brand accent line). Themes
+    # that don't set `header_rule` (e.g. report) get no divider, as before.
+    rule = theme.get("header_rule")
+    if rule:
+        add_rect(slide, 0, bar_h, SLIDE_W, Inches(0.05), fill_hex=rule)
     # Reserve room at the right for the top-right classification marker (drawn
     # globally per slide by _classification_marker) so a long title never
     # collides with it.
@@ -226,8 +231,11 @@ def _footer(slide, theme, slide_no=None, total=None, footer_text=None):
                  SLIDE_W - 2 * MARGIN - Inches(1.0), Inches(0.3),
                  font=theme["body_font"], size=10, color=theme["text_muted"])
     if slide_no is not None:
-        add_text(slide, str(slide_no), SLIDE_W - MARGIN - Inches(1.2),
-                 SLIDE_H - Inches(0.62), Inches(1.2), Inches(0.42),
+        # Bottom-right page number, forced to "current / total" (e.g. "3 / 15")
+        # when the total is known, so the reader always sees their position.
+        num = "%d / %d" % (slide_no, total) if total else str(slide_no)
+        add_text(slide, num, SLIDE_W - MARGIN - Inches(1.6),
+                 SLIDE_H - Inches(0.62), Inches(1.6), Inches(0.42),
                  font=theme["body_font"], size=16, color=theme["text_muted"],
                  align=PP_ALIGN.RIGHT)
 
@@ -936,6 +944,7 @@ def build(spec, out_path):
         if name not in ("title", "section", "closing", "image"):
             _footer(slide, theme,
                     slide_no=(i + 1) if show_numbers else None,
+                    total=len(slides),
                     footer_text=s.get("footer", footer_default))
         # Classification marker (e.g. Confidential) on every slide's top-right.
         _classification_marker(slide, theme, name)

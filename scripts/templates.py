@@ -107,6 +107,27 @@ THEMES = {
         "header_style": "bar",
         "header_label": "Confidential",  # white label at the right of the header bar; "" to disable
     },
+    # Samsung DS house style: black header bar, a thin Samsung-blue rule under
+    # it, blue accents on a clean white body. Korean corporate/internal decks.
+    "samsung": {
+        "label": "Samsung DS",
+        "description": "Black header bar with a Samsung-blue rule, blue accents, white body, Malgun Gothic. Korean corporate/internal brand decks.",
+        "background": "FFFFFF",
+        "surface": "F4F5F7",       # light card / panel fill (matches PII cards)
+        "primary": "111111",       # near-black header bar, section bg, table header
+        "secondary": "1428A0",     # Samsung blue — eyebrows, sublabels, subtitle
+        "accent": "1428A0",        # Samsung blue — metric values, accent blocks, charts
+        "text": "1A1A1A",
+        "text_muted": "70747C",
+        "on_primary": "FFFFFF",
+        "heading_font": "Malgun Gothic",
+        "body_font": "Malgun Gothic",
+        "title_pt": 40,
+        "heading_pt": 26,
+        "body_pt": 18,
+        "header_style": "bar",
+        "header_label": "SAMSUNG DS",  # top-right brand marker on every slide
+    },
     # Serif, muted, dense — lectures, research, reports.
     "academic": {
         "label": "Academic",
@@ -127,7 +148,7 @@ THEMES = {
     },
 }
 
-DEFAULT_THEME = "corporate"
+DEFAULT_THEME = "samsung"
 
 
 def get_theme(name):
