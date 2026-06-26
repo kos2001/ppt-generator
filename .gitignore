@@ -12,3 +12,9 @@ ppt-generator-workspace/
 # Scratch
 /tmp/
 *.tmp
+
+# Visual-QA renders and extracted-image scratch (regenerated from decks/specs)
+*.thumbs/
+*.grid.png
+/assets/cca_img/
+/assets/img_src/

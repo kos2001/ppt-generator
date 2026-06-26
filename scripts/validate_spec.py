@@ -118,7 +118,7 @@ def validate(spec):
 VALID_OPS = {
     "replace_text", "set_text", "set_table_cell", "set_chart_data",
     "fit_image", "replace_image", "add_image", "add_textbox",
-    "delete_shape", "delete_slide", "move_slide",
+    "delete_shape", "duplicate_slide", "delete_slide", "move_slide",
 }
 VALID_FITS = {"contain", "cover", "stretch"}
 
@@ -226,6 +226,12 @@ def validate_edits(spec):
                 errors.append("%s: 'align' must be left, center, or right" % tag)
         elif kind == "delete_shape":
             need(op, tag, "slide", "shape", kind=_is_int)
+        elif kind == "duplicate_slide":
+            need(op, tag, "slide", kind=_is_int)
+            if "count" in op and not (_is_int(op["count"]) and op["count"] >= 1):
+                errors.append("%s: 'count' must be an integer >= 1" % tag)
+            if "at" in op and not _is_int(op["at"]):
+                errors.append("%s: 'at' must be an integer" % tag)
         elif kind == "delete_slide":
             need(op, tag, "slide", kind=_is_int)
         elif kind == "move_slide":
