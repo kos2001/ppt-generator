@@ -35,7 +35,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_pptx
 import edit_pptx
-from templates import get_theme, DEFAULT_THEME
+from templates import get_theme, body_box, DEFAULT_THEME
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -79,17 +79,6 @@ def images_from_pptx(pptx_path, out_dir):
     return paths
 
 
-def _body_box(theme):
-    """Body region under the header, above the footer/page-number band, in
-    inches. Bar headers are ~1.0" tall; accent headers are lighter, so content
-    can start higher."""
-    top = 1.15 if theme.get("header_style") == "bar" else 1.6
-    left = 0.4
-    width = 13.333 - 2 * left
-    height = 7.5 - top - 0.65  # leave room for footer / page number
-    return left, top, width, height
-
-
 def wrap(images, template, output, *, eyebrow=None, footer=None,
          fit="contain", numbers=True):
     if not images:
@@ -112,7 +101,7 @@ def wrap(images, template, output, *, eyebrow=None, footer=None,
     build_pptx.build(frame_spec, frame_path)
 
     # 2) Fit each image into the body box of its slide.
-    left, top, width, height = _body_box(theme)
+    left, top, width, height = body_box(theme)
     ops = [{"op": "add_image", "slide": i, "image": img,
             "left_in": left, "top_in": top, "width_in": width,
             "height_in": height, "fit": fit}

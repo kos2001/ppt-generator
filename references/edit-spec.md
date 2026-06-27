@@ -114,11 +114,15 @@ misaligned).
 
 // Or fit into a specific template box / placeholder:
 {"op": "fit_image", "slide": 3, "shape": 0, "into_shape": 2, "fit": "contain"}
+
+// Or snap into a named template's content box (under header, above footer):
+{"op": "fit_image", "slide": 2, "shape": 0, "template": "samsung", "fit": "contain"}
 ```
 | Field | Required | Notes |
 |-------|----------|-------|
 | `slide`, `shape` | yes | The picture to refit. |
 | `fit` | no | `contain` / `cover` / `stretch` (default `cover`). |
+| `template` | no | Fit into this template's standard content box (e.g. `samsung`), sized to the deck's actual slide dimensions. Box precedence: `template` > `into_shape` > inch box > whole slide. |
 | `into_shape` | no | Fit into this shape's box instead of the whole slide. |
 | `left_in`+`top_in`+`width_in`+`height_in` | no | An explicit inch box instead of the whole slide. |
 
@@ -147,10 +151,15 @@ explicit inch coordinates.
 // Or place into an explicit box:
 {"op": "add_image", "slide": 5, "image": "chart.png",
  "left_in": 1, "top_in": 1.5, "width_in": 4, "height_in": 3, "fit": "contain"}
+
+// Or drop into a named template's content box:
+{"op": "add_image", "slide": 5, "image": "chart.png",
+ "template": "samsung", "fit": "contain"}
 ```
 | Field | Required | Notes |
 |-------|----------|-------|
 | `image` | yes | Path to an image file. |
+| `template` | no | Fit into this template's standard content box (e.g. `samsung`), sized to the deck's slide dimensions. Box precedence: `template` > `into_shape` > inch box. |
 | `into_shape` | no | Index of an existing shape whose box (left/top/width/height) the image is fitted into — e.g. a template "photo here" rectangle. Found via `inspect_pptx.py`. |
 | `replace_target` | no | With `into_shape`, delete that placeholder shape after reading its box (default `false`). |
 | `left_in`, `top_in` | no | Position in inches when no `into_shape` (default 1, 1). |
