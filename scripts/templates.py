@@ -160,5 +160,28 @@ def get_theme(name):
     return THEMES.get((name or "").strip().lower(), THEMES[DEFAULT_THEME])
 
 
+def body_box(theme_or_name, slide_w_in=13.333, slide_h_in=7.5):
+    """The content/image region of a slide for a theme, in inches:
+    ``(left, top, width, height)``.
+
+    This is the box an image should fill to land *inside* the template's
+    chrome — under the header bar and above the footer / page-number band.
+    Bar headers are ~1.0" tall, so content starts lower; lighter accent
+    headers let it start higher. The box adapts to the slide's actual size,
+    so it stays correct for 16:9, 4:3, or any custom page setup.
+
+    Single source of truth shared by the renderer, the edit path
+    (edit_pptx.py `fit_image`/`add_image` with `template`), the COM resizer
+    (resize_pptx_com.py `--template`), and wrap_images.py.
+    """
+    theme = (theme_or_name if isinstance(theme_or_name, dict)
+             else get_theme(theme_or_name))
+    top = 1.15 if theme.get("header_style") == "bar" else 1.6
+    left = 0.4
+    width = slide_w_in - 2 * left
+    height = slide_h_in - top - 0.65  # leave room for footer / page number
+    return left, top, width, height
+
+
 def theme_names():
     return list(THEMES.keys())
