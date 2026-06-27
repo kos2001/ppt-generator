@@ -38,6 +38,18 @@ from pptx import Presentation
 from pptx.util import Inches, Emu, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from templates import body_box as _theme_body_box
+
+
+def _template_box(prs, name):
+    """EMU (left, top, width, height) for a template's content box on this
+    deck, sized to the deck's actual slide dimensions."""
+    sw = prs.slide_width / 914400.0   # EMU -> inches
+    sh = prs.slide_height / 914400.0
+    l, t, w, h = _theme_body_box(name, sw, sh)
+    return Inches(l), Inches(t), Inches(w), Inches(h)
 from pptx.oxml.ns import qn
 
 _ALIGN = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
@@ -257,8 +269,11 @@ def _picture_px(shape):
 
 
 def _target_box(prs, op):
-    """Resolve the box an image op fits into: an existing shape, an inch box,
-    or — when neither is given — the full slide (the fixed slide template)."""
+    """Resolve the box an image op fits into: a named template's content box,
+    an existing shape, an inch box, or — when none is given — the full slide
+    (the fixed slide template)."""
+    if "template" in op:
+        return _template_box(prs, op["template"])
     if "into_shape" in op:
         _, target = _shape(prs, op["slide"], op["into_shape"])
         return (target.left, target.top, target.width, target.height)
@@ -315,9 +330,11 @@ def op_add_image(prs, op):
     if not os.path.exists(path):
         raise EditError("image not found: %s" % path)
 
-    # Determine the target box. Priority: an existing template shape's geometry,
-    # else explicit inch coordinates.
-    if "into_shape" in op:
+    # Determine the target box. Priority: a named template's content box, an
+    # existing template shape's geometry, else explicit inch coordinates.
+    if "template" in op:
+        box = _template_box(prs, op["template"])
+    elif "into_shape" in op:
         _, target = _shape(prs, op["slide"], op["into_shape"])
         box = (target.left, target.top, target.width, target.height)
         if op.get("replace_target"):
@@ -339,7 +356,12 @@ def op_add_image(prs, op):
     px = _image_px(path)
     if px:
         _fit_into_box(pic, px[0], px[1], box_l, box_t, box_w, box_h, mode=fit)
-    where = ("into_shape %d" % op["into_shape"]) if "into_shape" in op else "box"
+    if "template" in op:
+        where = "template %s box" % op["template"]
+    elif "into_shape" in op:
+        where = "into_shape %d" % op["into_shape"]
+    else:
+        where = "box"
     return "add_image slide %d <- %s (%s, fit=%s)" % (op["slide"], path, where, fit)
 
 

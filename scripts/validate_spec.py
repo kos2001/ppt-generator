@@ -198,6 +198,8 @@ def validate_edits(spec):
                               % (tag, ", ".join(sorted(VALID_FITS))))
             if "into_shape" in op and not _is_int(op["into_shape"]):
                 errors.append("%s: 'into_shape' must be an integer" % tag)
+            if "template" in op and not isinstance(op["template"], str):
+                errors.append("%s: 'template' must be a string" % tag)
         elif kind == "replace_image":
             need(op, tag, "slide", "shape", kind=_is_int)
             need(op, tag, "image", kind=lambda v: isinstance(v, str))
@@ -213,10 +215,13 @@ def validate_edits(spec):
                 warnings.append("%s: image not found: %s" % (tag, op["image"]))
             if "into_shape" in op and not _is_int(op["into_shape"]):
                 errors.append("%s: 'into_shape' must be an integer" % tag)
+            if "template" in op and not isinstance(op["template"], str):
+                errors.append("%s: 'template' must be a string" % tag)
             if "fit" in op and op["fit"] not in VALID_FITS:
                 errors.append("%s: 'fit' must be one of %s"
                               % (tag, ", ".join(sorted(VALID_FITS))))
-            if "into_shape" not in op and (("width_in" in op) ^ ("height_in" in op)):
+            if ("into_shape" not in op and "template" not in op
+                    and (("width_in" in op) ^ ("height_in" in op))):
                 warnings.append("%s: give both width_in and height_in for a fixed "
                                 "box, or neither for native size" % tag)
         elif kind == "add_textbox":

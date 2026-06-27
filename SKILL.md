@@ -221,6 +221,34 @@ control — go through the approval process, don't work around it. Once an
 unprotected copy or its images exist, the read/edit and image-only workflows
 here apply unchanged.
 
+**Authorized COM path (Windows + PowerPoint).** When the user can already open
+and edit the file manually in desktop PowerPoint on their corporate PC — i.e.
+the DRM/EDM grants them edit rights — you can drive that *same authorized
+PowerPoint* via COM automation (pywin32) instead of extracting a plaintext copy.
+PowerPoint decrypts in the signed-in session, the script edits, and `Save()`
+re-encrypts on write. This is **not** a DRM bypass; it uses the user's own
+rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
+
+- `scripts/extract_pptx_com.py` — read text + speaker notes from a DRM file.
+- `scripts/resize_pptx_com.py` — **resize pictures** in a DRM file, including
+  fitting them to a template's content box. Resizing changes only frame geometry
+  and never reads the image pixels, so it works even when DRM blocks image
+  *extraction* (if manual resize works, this does too). Run it in order:
+
+  ```bash
+  python scripts/resize_pptx_com.py deck.pptx --check    # can COM even open it?
+  python scripts/resize_pptx_com.py deck.pptx --list     # pictures + sizes
+  python scripts/resize_pptx_com.py deck.pptx --template # fit all into template box
+  ```
+
+  `--template [NAME]` (default `samsung`) fits each picture into the template
+  content box; `--box WxH`, `--scale F`, `--width/--height` are the other modes;
+  `--fit contain|stretch`. In-place saves back up the original first.
+
+  Some strict DRM products allow manual editing but block automation/COM
+  specifically — then `--check` fails at `Open()`. That block is intended; stop
+  there, don't work around it.
+
 **Read / extract** content:
 
 ```bash
@@ -262,8 +290,12 @@ Images are fitted to a **fixed box** without distortion: `add_image` places into
 a template placeholder (`into_shape`) or inch box, `replace_image` keeps the
 existing picture's frame, and `fit_image` resizes a picture already on the slide
 to a box — defaulting to the whole slide, so it snaps full-page images to fill
-the slide template exactly. All take a `fit` mode (`contain` = letterbox inside,
-`cover` = fill and crop, `stretch`).
+the slide template exactly. `add_image`/`fit_image` also accept a `template`
+field (e.g. `"template": "samsung"`) that fits the image into that template's
+standard **content box** — the region under the header bar and above the
+footer/page-number band, sized to the deck's actual slide dimensions — so an
+edited image lands exactly where the template wants it. All take a `fit` mode
+(`contain` = letterbox inside, `cover` = fill and crop, `stretch`).
 
 Editing preserves the original design. To instead **restyle** a deck into a
 different template, use the generation path: change the `template` field in a
