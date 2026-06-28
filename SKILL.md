@@ -105,10 +105,19 @@ A deck is expensive to redo, so the few things that shape *every* slide are
 worth getting right. But most of them are already fixed for this user, so the
 confirm collapses to a single lean question — and often to none:
 
-- **Template / look** — **always `samsung`** for this user. Never ask; never
-  offer the catalog. (The other templates in `references/templates.md` exist for
-  restyling, not for a pre-build choice.)
-- **Length** — default **~10 slides** (tight 8–14). Only a default; easy to redo.
+- **Template / look** — **default to `samsung`** for this user: never ask and
+  never offer the catalog when no template is named. **But an explicitly named
+  template wins** — "dark 템플릿으로", "use the corporate template", "make it
+  vibrant" → build in exactly that one. The catalog in
+  `references/templates.md` is for those explicit requests and for restyling, not
+  a pre-build menu. (Only treat a template *name* as a choice; "a clean corporate
+  deck" uses "corporate" as an adjective → still samsung.)
+- **Length** — default **~10 slides** (tight 8–14) when unspecified. **When the
+  user names a number** ("8장", "about 12 slides"), that's a target to *hit*
+  within ±1 — and section dividers, an overview/agenda, and the closing all count
+  toward it. Don't let chrome slides quietly turn a requested 8 into a 14: if the
+  content truly needs more room, build close to the number and say what you'd add,
+  rather than silently overshooting. Length is easy to redo, so honor the ask.
 - **Audience & setting** — assume a general professional audience on a big
   screen unless the request implies otherwise.
 - **Topic, key message, source material** — read from the request itself. If the
