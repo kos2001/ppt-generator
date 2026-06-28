@@ -1,22 +1,21 @@
 ---
 name: ppt-generator
 description: >-
-  Create, read, or edit PowerPoint (.pptx) decks. CREATE complete editable
-  presentations from a topic, outline, notes, or source document in a chosen
-  visual template — use WHENEVER the user wants to create, build, make, or
-  draft a slide deck / presentation / PPT / PPTX / slides / "발표 자료" /
-  "자료 만들어" / pitch deck / keynote, even if they only give the topic
-  ("make slides about X", "turn this doc into a deck", "투자자용 10장 피치").
-  EDIT or MODIFY an existing .pptx in place ("이 파일 수정해줘", "edit this
-  deck", "fix the title", "swap the logo", "update the chart numbers"):
-  replace text (formatting preserved), set/add text boxes, edit tables and
-  chart data, replace/add/refit images, delete or reorder slides — keeping the
-  original design. FIT images to a fixed template box or placeholder without
-  distortion ("템플릿 크기에 맞춰 이미지 넣어줘"). RESTYLE / re-render a deck
-  into another template or look (corporate, minimal, dark, vibrant, academic;
-  "다른 템플릿으로", "이 템플릿으로 바꿔줘"). READ / EXTRACT a deck's text,
-  tables, chart data, and images ("내용 추출", "이 ppt 읽어줘"). Produces a
-  real, fully editable .pptx via python-pptx — not a description of one.
+  Create, read, edit, or diagram PowerPoint (.pptx) decks — use WHENEVER a user
+  wants slides made, changed, or diagrammed. CREATE a full editable deck from a
+  topic, outline, notes, or document ("make slides about X", "발표 자료
+  만들어줘", "투자자용 10장 피치", "turn this doc into a deck"). EDIT an existing
+  .pptx in place, keeping its design — replace text (formatting preserved),
+  tables, chart data, images; add/delete/reorder slides ("이 파일 수정해줘",
+  "fix the title", "swap the logo"). DIAGRAM as
+  native editable shapes (not images): process, cycle, org chart/hierarchy,
+  pyramid, funnel, timeline, branching flowchart ("다이어그램/플로우차트/조직도/
+  순서도 그려줘"). FIT images to a template box without distortion ("템플릿
+  크기에 맞춰"). RESTYLE into another template (corporate, minimal, dark,
+  vibrant, academic, samsung, report). READ/EXTRACT text, tables, chart data,
+  images ("내용 추출", "이 ppt 읽어줘"). Handles ordinary .pptx via python-pptx
+  and corporate DRM/EDM decks via authorized PowerPoint COM. Produces a real,
+  fully editable .pptx — not a description of one.
 ---
 
 # PPT Generator
@@ -52,21 +51,26 @@ scripts, and even the failure modes differ completely:
   tables/charts, refit images, duplicate/reorder slides in place. → **Mode B
   workflow** below.
 
-**How to pick.** If the request clearly implies one mode, go straight to it
-("make slides about Q4 churn" → A; "fix the date in deck.pptx" → B). If it's
-ambiguous — the user just points at a file without saying what to do, asks for
-something that could be either ("이 내용으로 발표자료 만들어줘" when a `.pptx`
-is attached), or names both creating and an existing file — **ask before
-starting**:
+**How to pick — infer it, don't interrogate.** Almost every request resolves on
+its own; read the cue and go:
 
-> "두 가지로 진행할 수 있어요 — (A) 레이아웃에 맞춰 **새 덱을 생성**할까요, 아니면
-> (B) **기존 파일을 수정**할까요?"
+- An existing `.pptx` named with *change* language — "수정/고쳐/바꿔/정리/통일",
+  "fix", "edit", "update", "swap", "clean up" — is **Mode B**. Don't ask what to
+  change; the Mode B workflow inspects the deck and acts (see below).
+- A topic, outline, notes, or source doc with *make* language — "만들어줘",
+  "발표자료", "deck", "slides about…", "turn this into a deck" — is **Mode A**.
 
-Why the choice comes first: generating re-renders the whole deck from a spec, so
-it *replaces* the original design; editing preserves every untouched shape and
-bit of formatting. Picking the wrong mode silently discards exactly what the
-user meant to keep (or rebuilds something they wanted made fresh) — so the two
-flows stay separate and you commit to one.
+Only one case is genuinely 50/50 and worth a single quick question: a `.pptx` is
+attached **and** the ask is "make a deck from this" — which can mean *edit this
+file* or *use it as source material for a fresh deck*. There, ask once:
+
+> "(A) 이걸 소재로 **새 덱을 생성**할까요, 아니면 (B) 이 **파일을 직접 수정**할까요?"
+
+Why even that one matters: generating re-renders the whole deck from a spec, so
+it *replaces* the original design, while editing preserves every untouched shape
+and bit of formatting. Guessing wrong here silently discards exactly what the
+user meant to keep — so resolve this single fork, but don't manufacture a
+question when the cue above already settles it.
 
 ## Requirements
 
@@ -82,43 +86,45 @@ python3 -c "import pptx" 2>/dev/null || pip install python-pptx Pillow
 > it in every `python3 …` command below. Paths with backslashes also need
 > forward slashes or doubled backslashes inside JSON specs.
 
-Optional, only for visual QA (`scripts/thumbnail.py`): LibreOffice (`soffice`)
-to convert `.pptx`→PDF, plus `pdftoppm` (poppler) or PyMuPDF to rasterize it.
-The reading/editing scripts (`extract_pptx.py`, `inspect_pptx.py`,
-`edit_pptx.py`, `ooxml.py`) need only `python-pptx` + Pillow.
+Optional, only for visual QA (`scripts/thumbnail.py`): desktop PowerPoint with
+`pywin32` — it exports each slide straight to PNG via COM, so there is no
+external converter to install. The reading/editing scripts (`extract_pptx.py`,
+`inspect_pptx.py`, `edit_pptx.py`, `ooxml.py`) need only `python-pptx` + Pillow.
+
+> **Windows COM path (DRM/EDM decks):** the `*_com.py` scripts
+> (`extract_pptx_com.py`, `resize_pptx_com.py`) drive desktop PowerPoint via
+> COM and require `pywin32` plus an installed, signed-in PowerPoint. Install
+> with `pip install pywin32`. Verify with `py -c "import win32com.client"`.
+> See the **Authorized COM path** section under Mode B for usage.
 
 ## Mode A — Generate a deck from a layout
 
-### 1. Confirm the brief before building
+### 1. Confirm the brief — at most one quick question
 
-A deck is expensive to redo: the template, length, audience, and key message
-shape *every* slide, so guessing them wrong means rebuilding the whole thing.
-The reader almost always has these in their head but doesn't volunteer them.
-So **confirm the brief before you render** — don't silently pick defaults and
-generate. Get clear on:
+A deck is expensive to redo, so the few things that shape *every* slide are
+worth getting right. But most of them are already fixed for this user, so the
+confirm collapses to a single lean question — and often to none:
 
-- **Topic & key message** — what should the audience remember?
-- **Audience & setting** — execs, investors, students, a team? Big screen?
-- **Length** — how many slides?
-- **Template / look** — default to the user's house style if they have one
-  (this user uses **`samsung`** only — don't ask, just use it). Otherwise
-  confirm one of `corporate`, `minimal`, `dark`, `vibrant`, `samsung`, `report`,
-  `academic` (see `references/templates.md`). The renderer default is `samsung`.
-- **Source material** — if the user gave a document/notes, read it and extract
-  the structure; don't invent facts that aren't there.
+- **Template / look** — **always `samsung`** for this user. Never ask; never
+  offer the catalog. (The other templates in `references/templates.md` exist for
+  restyling, not for a pre-build choice.)
+- **Length** — default **~10 slides** (tight 8–14). Only a default; easy to redo.
+- **Audience & setting** — assume a general professional audience on a big
+  screen unless the request implies otherwise.
+- **Topic, key message, source material** — read from the request itself. If the
+  user gave a document/notes, extract the structure from it; don't invent facts.
 
-**What to do:** ask for whatever the request didn't already specify *and that
-isn't fixed by a house style*, in **one short consolidated question** (not an
-interrogation) — e.g. "몇 장 정도로, 누구 대상으로 만들까요?" — with your
-recommended default offered as the first option so it's a one-tap confirm. Then
-build. Skip the question
-only when the user already gave the essentials, attached a spec, or explicitly
-said to just go ahead ("알아서 만들어줘", "draft something") — in that case pick
-sensible defaults (tight 8–14 slides, `corporate`) and proceed, naming the
-choices you made so they can correct course.
+**So:** if the request already implies topic + roughly who/how long, **just
+build** and name the choices you made ("samsung·10장·일반 청중 기준으로 만들었어요
+— 길이/대상 바꿀 점 있으면 말씀해 주세요") so the user can course-correct in one
+reply. Only when length *and* audience are both genuinely unclear, ask **one**
+consolidated question with the defaults pre-filled as a one-tap answer — e.g.
+"몇 장 정도로, 누구 대상으로 만들까요? (기본: 10장·일반 청중)" — then build.
 
-The point isn't to stall — it's that a 30-second confirm beats regenerating 15
-slides in the wrong template or length. When in doubt, ask.
+The bar for asking is high on purpose: a single optional confirm is fine, but
+template choice, a multi-question intake, or re-asking what the request already
+says all just add friction. When the essentials are present, momentum beats
+confirmation.
 
 ### 2. Choose a template
 
@@ -176,16 +182,16 @@ chart/table data. Fix any errors it prints before rendering.
 
 State the real outcome: how many slides, which template, where the file is.
 Don't claim it "looks great" — you can't see it render. For visual QA, render a
-contact-sheet grid of every slide and inspect it (needs LibreOffice plus
-`pdftoppm` or PyMuPDF):
+contact-sheet grid of every slide and inspect it (needs desktop PowerPoint +
+`pywin32`; PowerPoint exports each slide to PNG via COM):
 
 ```bash
 python3 scripts/thumbnail.py deck.pptx          # -> deck.grid.png (+ per-slide PNGs)
 ```
 
-Open the grid to catch text cutoff, overflow, or clashing colors. If LibreOffice
-isn't installed, the script says so — then tell the user to open the file in
-PowerPoint/Keynote and offer concrete next steps: adjust length, swap the
+Open the grid to catch text cutoff, overflow, or clashing colors. If PowerPoint
+or `pywin32` isn't available, the script says so — then tell the user to open the
+file in PowerPoint/Keynote and offer concrete next steps: adjust length, swap the
 template (one-field change → re-render), tighten wording, add a chart, etc.
 
 To **restyle** an existing deck into another look, change only the top-level
@@ -196,6 +202,35 @@ To **restyle** an existing deck into another look, change only the top-level
 This mode reads an existing `.pptx` and modifies it in place — keeping every
 untouched shape, image, and bit of formatting. Use it whenever the user has a
 file already and wants it changed rather than rebuilt.
+
+**When the ask is vague ("이 파일 수정해 줘", "fix this deck") — don't ask what
+to change. Inspect first, then act.** A bare "fix it" is an invitation to find
+the problems, not a prompt to interview the user. Run `inspect_pptx.py` (and a
+`thumbnail.py` grid when the issue might be visual) to see the real state. Then
+sort what you find into two buckets — and treat them differently:
+
+- **Safe, reversible fixes → just do them, now.** These only adjust *form*, never
+  destroy content, so there's nothing to second-guess: brand/fit foreign or
+  off-template slides to match the deck (full-bleed images with no chrome),
+  renumber stale page numbers to physical `position / total` (`renumber_pages`
+  does exactly this — don't talk yourself out of it), refit distorted or
+  overflowing images, correct an obviously wrong value. Apply every fix in this
+  bucket before you consider asking anything.
+- **Destructive or judgment calls → flag them *after*, don't freeze on them.**
+  Deleting slides, dropping content, or rewriting wording can't be undone and may
+  not match intent, so these you raise rather than assume. But raising them is the
+  *last* step, not a gate on the safe fixes above — never withhold a reversible
+  improvement just because some adjacent decision needs the user.
+
+The trap to avoid: a slide can be *off-template* (foreign styling — a safe
+branding fix) **and** *off-topic* (content that may not belong — a delete
+judgment call) at once. Brand it regardless; that's reversible and on-template
+either way. Then, separately, note the content concern: "이미지 슬라이드 N장을
+템플릿에 맞춰 브랜딩하고 번호를 다시 매겼어요. 다만 그 12장은 주제와 달라 보이는데
+— 뺄까요, 둘까요?" That mirrors the right instinct: fix what's clearly fixable,
+surface what genuinely needs a human call. Reserve an up-front question only when
+the deck has **no clear defect to fix** and the intent is truly underdetermined.
+The default is momentum: inspect, make every safe fix, report, then ask.
 
 > Works on ordinary, unprotected `.pptx` only. A DRM-protected file must first
 > be exported to a plaintext copy through its DRM client by an authorized user;
@@ -245,9 +280,73 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
   content box; `--box WxH`, `--scale F`, `--width/--height` are the other modes;
   `--fit contain|stretch`. In-place saves back up the original first.
 
+  `--chrome [NAME]` — **add the template's header/footer chrome** to a DRM deck.
+  `--template` only moves picture *frames*; `--chrome` inserts *new native
+  shapes* (header bar, `SAMSUNG DS` brand marker, page numbers, optional
+  `--eyebrow`/`--footer`) on every slide, mirroring the bar-style chrome in
+  `build_pptx.py`. PowerPoint decrypts in the authorized session, the shapes are
+  added, and `Save()` re-encrypts — so a DRM deck the user can edit manually
+  gets the same look as a natively rendered one (the COM equivalent of
+  `wrap_images.py`, which can't run on DRM because it needs python-pptx). It is
+  idempotent — a re-run removes its prior chrome before re-adding. Typical
+  image-deck flow is two passes: fit the images, then add chrome:
+
+  ```bash
+  python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
+  python scripts/resize_pptx_com.py tmp.pptx  --chrome  samsung \
+      --eyebrow "Project" --footer "Confidential" --out final.pptx
+  ```
+
+  **Fitting and chrome go together.** `--template` alone leaves a picture
+  centered on a *bare white slide* — it is not "applying the template," only
+  reframing. To make an image slide actually look like the template you must
+  follow the fit pass with a `--chrome` pass; do both whenever the goal is an
+  on-brand slide, and never offer the fit by itself as if it were the whole job.
+
+  `--slides LIST` (with `--chrome`) — **brand only the listed slides**, e.g.
+  `--slides 3,5` or `--slides 3-5` (1-based; `--slide N` also works for one).
+  This is the **DRM equivalent of the mixed-deck flow** below: in a deck that is
+  mostly native template slides with a few foreign image slides dropped in,
+  chrome *only* the foreign slides so the native ones don't get a second header
+  bar. Without it, `--chrome` stamps every slide and double-chromes the native
+  ones. Page numbers always use each slide's physical 1-based position over the
+  full deck. If the deck's existing numbers deliberately skip the image slides
+  (a common generation artifact), add `--no-numbers` so the branded slides match
+  that scheme instead of colliding with a neighbor's number:
+
+  ```bash
+  # mixed DRM deck: fit images, then chrome ONLY the foreign image slides 3 & 5
+  python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
+  python scripts/resize_pptx_com.py tmp.pptx  --chrome samsung --slides 3,5 \
+      --no-numbers --footer "Confidential" --out final.pptx
+  ```
+
+  Chrome geometry assumes a ~13.3×7.5in (16:9) slide; on much larger page setups
+  the bar/margins render proportionally smaller (still correctly anchored).
+
   Some strict DRM products allow manual editing but block automation/COM
   specifically — then `--check` fails at `Open()`. That block is intended; stop
   there, don't work around it.
+
+**Block diagrams on any deck — `scripts/diagram_com.py`.** The COM counterpart
+to the native `diagram` layout. python-pptx can draw diagrams but can't open DRM
+files; this draws them as real, editable PowerPoint shapes (rounded boxes,
+arrows, connectors) onto a slide through the authorized session — so a DRM deck
+gets native diagrams, not a flattened image. Seven types: `process`, `cycle`,
+`hierarchy`, `pyramid`, `funnel`, `timeline`, and `flowchart` (an arbitrary
+branching graph, auto-laid out `LR`/`TD` with crossing minimization — share the
+layout logic with `build_pptx.py` via `flowchart_layout.py`).
+
+```bash
+python scripts/diagram_com.py --demo --out diagrams.pptx          # showcase all 7
+python scripts/diagram_com.py --in deck.pptx --slide 4 --type flowchart \
+    --direction TD --title "처리 흐름" \
+    --nodes '[{"id":"a","title":"수집"},{"id":"b","title":"분석"}]' \
+    --edges '[["a","b"]]'
+```
+
+For a non-DRM deck, prefer the native `diagram` layout in a spec (Mode A) — same
+seven types, including `flowchart` (see `references/layouts.md`).
 
 **Read / extract** content:
 
@@ -277,11 +376,12 @@ python3 scripts/edit_pptx.py edits.json -i in.pptx -o out.pptx
 Supported operations: `replace_text` (formatting-preserving find/replace across
 runs), `set_text`, `set_table_cell`, `set_chart_data` (replace a chart's
 categories/series in place), `replace_image`, `add_image`, `add_textbox` (add
-new text), `delete_shape`, and slide-level `duplicate_slide` /
-`delete_slide` / `move_slide`. `duplicate_slide` copies a slide and its images
-N times — the primitive for wrapping an image-only deck in a fixed template
-(duplicate one chrome-only frame slide per image, then `add_image` into each;
-see `references/edit-spec.md`).
+new text), `add_chrome` (brand a slide with a template's header/footer in place),
+`renumber_pages` (re-stamp page numbers over the new total), `delete_shape`, and
+slide-level `duplicate_slide` / `delete_slide` / `move_slide`. `duplicate_slide`
+copies a slide and its images N times — the primitive for wrapping an image-only
+deck in a fixed template (duplicate one chrome-only frame slide per image, then
+`add_image` into each; see `references/edit-spec.md`).
 `replace_text` is the safest bulk edit — it matches by content, so it is
 unaffected by shape indices. Structural ops (duplicate/delete/move slide, delete
 shape) shift indices, so order them last or re-inspect between edits.
@@ -317,6 +417,41 @@ The recreate path is the only one that yields editable text — everything in th
 pixels stays baked in. For bulk transcription, OCR (Tesseract/PaddleOCR) can
 seed a first draft, but verify it against the image: OCR mangles diagram labels
 and Korean text, so a vision pass is still needed.
+
+**Mixed decks — native template slides + foreign image slides.** A common case
+is a deck that is *mostly* templated (rendered by `build_pptx.py`, or already
+on-brand) but has a few full-bleed image slides dropped in — NotebookLM/Gamma
+exports, translated slides, a screenshot. Those inserted slides have no chrome,
+so they look foreign, and the page numbers no longer match the new slide count.
+You want to brand just those slides while keeping every native slide and the
+slide count intact. `wrap_images.py` won't do (it rebuilds the whole deck from
+images, discarding the native slides). Pick the path by whether the file is
+protected:
+
+- **Unprotected `.pptx`** → edit in place with the `add_chrome` op, one foreign
+  slide at a time, then unify numbering once (below).
+- **DRM-protected** (python-pptx can't open it) → use the COM path with
+  `--chrome --slides 3,5` to brand *only* the foreign slides (see the
+  **Authorized COM path** section). Bare `--chrome` would stamp every slide and
+  double-chrome the native ones, so the slide list is required here.
+
+For the unprotected path:
+
+```jsonc
+// edits.json — brand slides 3-5, then renumber the whole deck
+{"op": "fit_image", "slide": 3, "shape": 0, "template": "samsung", "fit": "contain"},
+{"op": "add_chrome", "slide": 3, "template": "samsung", "eyebrow": "solutions", "title": "..."},
+// …repeat fit_image + add_chrome for each foreign slide…
+{"op": "renumber_pages"}   // run last: re-stamps every "N / M" to physical order over the new total
+```
+
+`fit_image` (same `template`) pulls each picture into the box *under* the header
+band; `add_chrome` then draws the matching header bar, brand marker, and page
+number — pixel-identical to a native render because it reuses `build_pptx.py`'s
+own chrome code. See `references/edit-spec.md` for the full field list. (If a
+foreign image already has its own baked-in title, the template's bar title and
+the image's title will both show — keep the bar title short, match it, or omit
+`title`.)
 
 **Wrapping images in a template frame — `scripts/wrap_images.py`.** The "wrap in
 chrome" path is bundled as one command, so you don't re-orchestrate it each time:

@@ -126,7 +126,8 @@ THEMES = {
         "heading_pt": 26,
         "body_pt": 18,
         "header_style": "bar",
-        "header_label": "SAMSUNG DS",  # top-right brand marker on every slide
+        "header_label": "Confidential",  # top-right classification marker on every slide
+        "show_footer_text": False,       # footer shows only the page number (no footer text)
     },
     # Serif, muted, dense — lectures, research, reports.
     "academic": {
