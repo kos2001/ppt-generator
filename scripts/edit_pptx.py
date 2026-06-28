@@ -16,6 +16,11 @@ reported by inspect_pptx.py. Supported operations:
     set_table_cell set one table cell's text by row/col
     replace_image  swap a picture's image bytes, keeping its position/size
     add_image      add a new picture to a slide at an inch-based position
+    add_chrome     add a template's header/footer chrome (header bar, brand
+                   marker, page number) to a slide in place — brands a foreign
+                   or image-only slide to match a templated deck
+    renumber_pages re-stamp every "N / M" page-number box to physical order
+                   over the current total (fix numbering after insert/delete)
     delete_shape   remove a shape
     duplicate_slide copy a slide (and its images) N times — the primitive for
                    replicating a template frame across many image slides
@@ -32,6 +37,7 @@ import argparse
 import copy
 import json
 import os
+import re
 import sys
 
 from pptx import Presentation
@@ -394,6 +400,90 @@ def op_add_textbox(prs, op):
     return "add_textbox slide %d: %r" % (op["slide"], op.get("text", "")[:30])
 
 
+def op_add_chrome(prs, op):
+    """Add a template's header/footer chrome to one slide *in place*: the header
+    (a filled bar or an accent header, per the template), the brand /
+    classification marker, and a "current / total" page number.
+
+    This is the missing piece for a *mixed* deck — a few natively rendered
+    template slides plus foreign full-bleed slides dropped in (e.g. NotebookLM,
+    Gamma, or translated exports), which arrive with no chrome and so look out of
+    place. wrap_images.py would rebuild the whole deck from images (losing the
+    native slides) and the COM --chrome path stamps *every* slide (doubling
+    chrome on the ones that already have it); this op brands just the slides you
+    name, keeping the deck and its slide count intact.
+
+    It reuses build_pptx's own header/footer drawing, so a chromed slide is
+    identical to a natively rendered one in the same template. Typical recipe per
+    foreign image slide: fit_image (template=...) to pull the picture under the
+    header band, then add_chrome to brand it. `slide_no`/`total` default to the
+    slide's physical position and the deck length, which is what you want when
+    chroming in physical order; override them, or run renumber_pages afterward,
+    to unify numbering across slides that were chromed at different totals.
+
+    Fields: slide (required); template (default "samsung"), title, eyebrow,
+    subtitle, footer, slide_no, total, page_number (default true),
+    layout (marker contrast hint, default "diagram").
+    """
+    bp = __import__("build_pptx")
+    from templates import get_theme
+    slide = _slide(prs, op["slide"])
+    theme = get_theme(op.get("template", "samsung"))
+    # build_pptx's chrome helpers read module-level canvas globals; point them at
+    # this deck's real slide size so the bar and markers anchor correctly on any
+    # page setup, then restore so nothing else is affected.
+    saved = (bp.SLIDE_W, bp.SLIDE_H)
+    bp.SLIDE_W, bp.SLIDE_H = prs.slide_width, prs.slide_height
+    try:
+        bp._slide_title(slide, theme, op.get("title", ""),
+                        eyebrow=op.get("eyebrow"), subtitle=op.get("subtitle"))
+        bp._classification_marker(slide, theme, op.get("layout", "diagram"))
+        if op.get("page_number", True):
+            total = op.get("total", len(list(prs.slides)))
+            bp._footer(slide, theme, slide_no=op.get("slide_no", op["slide"]),
+                       total=total, footer_text=op.get("footer"))
+    finally:
+        bp.SLIDE_W, bp.SLIDE_H = saved
+    return "add_chrome slide %d (template=%s)" % (
+        op["slide"], op.get("template", "samsung"))
+
+
+_PAGE_RE = re.compile(r"^\s*\d+\s*/\s*\d+\s*$")
+
+
+def op_renumber_pages(prs, op):
+    """Rewrite every "N / M" page-number box across the deck to the slide's
+    physical position over the current total, preserving the box's formatting.
+
+    After inserting, deleting, or reordering slides the baked footer numbers go
+    stale (e.g. a 6-slide deck grown to 9 still reads "1 / 6" … "6 / 6"); this
+    re-stamps them all to "1 / 9" … "9 / 9" in one pass. It matches the
+    "current / total" footer that build_pptx and add_chrome emit; any text box
+    that doesn't look like a page number is left untouched, so it won't clobber
+    body text that happens to contain a slash.
+
+    Fields: none required. `format` (default "{n} / {total}") customises the
+    string — e.g. "{n}/{total}" for no spaces, or "Page {n} of {total}".
+    """
+    total = len(list(prs.slides))
+    fmt = op.get("format", "{n} / {total}")
+    changed = 0
+    for i, slide in enumerate(prs.slides, start=1):
+        for sh in slide.shapes:
+            if sh.has_text_frame and _PAGE_RE.match(sh.text_frame.text or ""):
+                p = sh.text_frame.paragraphs[0]
+                txt = fmt.format(n=i, total=total)
+                if p.runs:
+                    p.runs[0].text = txt
+                    for r in p.runs[1:]:
+                        r.text = ""
+                else:
+                    sh.text_frame.text = txt
+                changed += 1
+                break  # one page-number box per slide
+    return "renumber_pages: %d slide(s) -> / %d" % (changed, total)
+
+
 def _sld_id_list(prs):
     return prs.slides._sldIdLst
 
@@ -494,6 +584,8 @@ OPS = {
     "replace_image": op_replace_image,
     "add_image": op_add_image,
     "add_textbox": op_add_textbox,
+    "add_chrome": op_add_chrome,
+    "renumber_pages": op_renumber_pages,
     "delete_shape": op_delete_shape,
     "duplicate_slide": op_duplicate_slide,
     "delete_slide": op_delete_slide,
