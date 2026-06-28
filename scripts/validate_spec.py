@@ -27,7 +27,8 @@ VALID_LAYOUTS = {
     "metrics", "quote", "image", "table", "chart", "closing", "diagram",
 }
 
-VALID_DIAGRAMS = {"process", "cycle", "hierarchy", "pyramid", "funnel", "timeline"}
+VALID_DIAGRAMS = {"process", "cycle", "hierarchy", "pyramid", "funnel",
+                  "timeline", "flowchart"}
 
 # layout -> (required keys, at-least-one-of groups)
 REQUIRED = {
@@ -118,6 +119,7 @@ def validate(spec):
 VALID_OPS = {
     "replace_text", "set_text", "set_table_cell", "set_chart_data",
     "fit_image", "replace_image", "add_image", "add_textbox",
+    "add_chrome", "renumber_pages",
     "delete_shape", "duplicate_slide", "delete_slide", "move_slide",
 }
 VALID_FITS = {"contain", "cover", "stretch"}
@@ -229,6 +231,18 @@ def validate_edits(spec):
             need(op, tag, "text", kind=lambda v: isinstance(v, str))
             if "align" in op and op["align"] not in ("left", "center", "right"):
                 errors.append("%s: 'align' must be left, center, or right" % tag)
+        elif kind == "add_chrome":
+            need(op, tag, "slide", kind=_is_int)
+            if "template" in op and not isinstance(op["template"], str):
+                errors.append("%s: 'template' must be a string" % tag)
+            for f in ("slide_no", "total"):
+                if f in op and not _is_int(op[f]):
+                    errors.append("%s: '%s' must be an integer" % (tag, f))
+            if "page_number" in op and not isinstance(op["page_number"], bool):
+                errors.append("%s: 'page_number' must be true or false" % tag)
+        elif kind == "renumber_pages":
+            if "format" in op and not isinstance(op["format"], str):
+                errors.append("%s: 'format' must be a string" % tag)
         elif kind == "delete_shape":
             need(op, tag, "slide", "shape", kind=_is_int)
         elif kind == "duplicate_slide":

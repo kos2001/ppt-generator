@@ -189,6 +189,66 @@ Adds new text onto a slide (vs `set_text`, which only edits an existing shape).
 | `left_in`/`top_in`/`width_in`/`height_in` | no | Inch box (defaults 1,1,4,1). |
 | `font`, `size_pt`, `bold`, `color`(hex), `align`(left/center/right) | no | Formatting. |
 
+### `add_chrome` — brand a slide with a template's header/footer
+Adds a template's chrome to one slide **in place** — the header (a filled bar or
+an accent header, whichever the template uses), the brand / classification
+marker, and a `current / total` page number — reusing the same drawing code as
+`build_pptx.py`, so a chromed slide is identical to a natively rendered one.
+
+This is the missing piece for a **mixed deck**: a few natively rendered template
+slides plus foreign full-bleed slides dropped in (NotebookLM, Gamma, translated
+or design-tool exports), which arrive with no chrome and look out of place.
+`wrap_images.py` would rebuild the whole deck from images (losing the native
+slides); the COM `--chrome` path stamps *every* slide (doubling chrome on the
+ones that already have it). `add_chrome` brands only the slides you name, keeping
+the deck and its slide count intact.
+
+```json
+// Typical recipe per foreign image slide: pull the picture under the header,
+// then brand it. Run a renumber_pages at the end to unify page numbers.
+{"op": "fit_image", "slide": 3, "shape": 0, "template": "samsung", "fit": "contain"}
+{"op": "add_chrome", "slide": 3, "template": "samsung",
+ "eyebrow": "solutions", "title": "저장소 내 AI 코파일럿"}
+```
+| Field | Required | Notes |
+|-------|----------|-------|
+| `slide` | yes | 1-based slide to brand. |
+| `template` | no | Template whose chrome to draw (default `samsung`). |
+| `title` | no | Header title text. |
+| `eyebrow` | no | Small label above the title (rendered uppercase). |
+| `subtitle` | no | Optional line under the header. |
+| `footer` | no | Footer text (left of the page number). |
+| `slide_no`, `total` | no | Page number values (default: this slide's physical position / deck length). |
+| `page_number` | no | Set `false` to omit the page number (default `true`). |
+
+Note that `fit_image` with the same `template` fits the picture into the box
+*under* the header band, so the new bar never overlaps the image. The header is
+drawn last (on top), so call `add_chrome` after `fit_image`. For templates with a
+"bar" header (e.g. `samsung`) on a full-bleed foreign slide that has its own
+baked-in title, expect the bar title and the image's own title to both show —
+either keep the bar title short, set it to match, or omit `title`.
+
+### `renumber_pages` — re-stamp page numbers across the deck
+Rewrites every `N / M` page-number box to the slide's physical position over the
+current total, keeping each box's formatting. After inserting, deleting, or
+reordering slides the baked footer numbers go stale (a 6-slide deck grown to 9
+still reads `1 / 6` … `6 / 6`); this re-stamps them all to `1 / 9` … `9 / 9` in
+one pass. It matches the `current / total` footer that `build_pptx.py` and
+`add_chrome` emit; a box that doesn't look like a page number is left untouched,
+so it won't clobber body text that contains a slash.
+
+```json
+{"op": "renumber_pages"}
+{"op": "renumber_pages", "format": "{n}/{total}"}        // no spaces
+{"op": "renumber_pages", "format": "Page {n} of {total}"}
+```
+| Field | Required | Notes |
+|-------|----------|-------|
+| `format` | no | Number string template (default `"{n} / {total}"`); use `{n}` and `{total}`. |
+
+Run it **last**, after any `add_chrome` / `duplicate_slide` / `delete_slide` /
+`move_slide`, so it numbers the final slide order.
+
 ### `delete_shape` — remove a shape
 ```json
 {"op": "delete_shape", "slide": 4, "shape": 3}

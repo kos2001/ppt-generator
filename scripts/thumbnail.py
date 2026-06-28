@@ -2,97 +2,79 @@
 """Render a .pptx to slide images and a contact-sheet grid for visual QA.
 
 You cannot see a deck render, so layout bugs (text cutoff, overflow, clashing
-colors) slip through. This converts the deck to per-slide images and tiles them
+colors) slip through. This exports the deck to per-slide images and tiles them
 into a single grid image you can open to eyeball every slide at once — the
 visual-validation step from Anthropic's official pptx skill.
 
-Pipeline:  .pptx --(LibreOffice)--> PDF --(pdftoppm | PyMuPDF)--> PNGs --(Pillow)--> grid
+Pipeline:  .pptx --(PowerPoint COM)--> PNGs --(Pillow)--> grid
 
 Usage:
     python thumbnail.py deck.pptx                 # -> deck.thumbs/ + deck.grid.png
     python thumbnail.py deck.pptx -o out_dir --cols 4 --dpi 120
 
 Requirements:
-    - LibreOffice (`soffice`) for the .pptx -> PDF step
-    - pdftoppm (poppler) OR PyMuPDF (`pip install pymupdf`) for PDF -> PNG
+    - Desktop Microsoft PowerPoint (COM-registered) + `pip install pywin32`
     - Pillow for the grid (already a skill dependency)
+
+PowerPoint exports each slide straight to PNG (Slide.Export), so there is no
+external converter to install. Because it drives the signed-in PowerPoint, it
+also renders DRM/EDM decks the user can open — no separate plaintext copy.
 """
 import argparse
-import glob
 import os
-import shutil
-import subprocess
 import sys
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 
-# Common LibreOffice locations beyond PATH (Windows/macOS/Linux).
-SOFFICE_CANDIDATES = [
-    "soffice", "libreoffice",
-    r"C:\Program Files\LibreOffice\program\soffice.exe",
-    r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-    "/Applications/LibreOffice.app/Contents/MacOS/soffice",
-    "/usr/bin/soffice", "/usr/bin/libreoffice",
-]
+MSO_FALSE, MSO_TRUE = 0, -1
+PT_TO_IN = 1.0 / 72.0
 
 
-def find_soffice():
-    for cand in SOFFICE_CANDIDATES:
-        if os.path.sep in cand or (os.altsep and os.altsep in cand):
-            if os.path.exists(cand):
-                return cand
-        elif shutil.which(cand):
-            return shutil.which(cand)
-    return None
+def pptx_to_pngs(pptx_path, out_dir, dpi):
+    """Export each slide to a PNG via PowerPoint COM. Returns sorted PNG paths.
 
-
-def pptx_to_pdf(pptx_path, out_dir):
-    soffice = find_soffice()
-    if not soffice:
-        raise SystemExit(
-            "LibreOffice not found. Install it to convert .pptx -> PDF "
-            "(https://www.libreoffice.org/download), or open the deck in "
-            "PowerPoint/Keynote to inspect it manually."
-        )
-    subprocess.run(
-        [soffice, "--headless", "--convert-to", "pdf", "--outdir", out_dir, pptx_path],
-        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    )
-    base = os.path.splitext(os.path.basename(pptx_path))[0]
-    pdf = os.path.join(out_dir, base + ".pdf")
-    if not os.path.exists(pdf):
-        raise SystemExit("LibreOffice did not produce a PDF for %s" % pptx_path)
-    return pdf
-
-
-def pdf_to_pngs(pdf_path, out_dir, dpi):
-    """Rasterize a PDF to one PNG per page. Returns sorted list of PNG paths."""
-    prefix = os.path.join(out_dir, "slide")
-    pdftoppm = shutil.which("pdftoppm")
-    if pdftoppm:
-        subprocess.run(
-            [pdftoppm, "-png", "-r", str(dpi), pdf_path, prefix],
-            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        )
-        return sorted(glob.glob(prefix + "*.png"))
-    # Fallback: PyMuPDF.
+    Drives the installed desktop PowerPoint: PowerPoint opens the deck in the
+    user's authorized session and writes one PNG per slide, sized from the
+    slide's real dimensions at the requested DPI.
+    """
     try:
-        import fitz
+        import win32com.client
     except ImportError:
         raise SystemExit(
-            "Need pdftoppm (poppler) or PyMuPDF to rasterize the PDF. "
-            "Install one: `pip install pymupdf`."
+            "pywin32 not found. Install it to render slides via PowerPoint: "
+            "`pip install pywin32` (needs desktop PowerPoint installed). "
+            "Or open the deck in PowerPoint/Keynote to inspect it manually."
         )
-    doc = fitz.open(pdf_path)
-    zoom = dpi / 72.0
-    mat = fitz.Matrix(zoom, zoom)
+    from pythoncom import com_error  # type: ignore
+
+    try:
+        powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+        pres = powerpoint.Presentations.Open(
+            os.path.abspath(pptx_path), ReadOnly=MSO_TRUE,
+            Untitled=MSO_FALSE, WithWindow=MSO_FALSE,
+        )
+    except com_error as e:
+        raise SystemExit(
+            "PowerPoint COM could not open the deck (%s). Ensure desktop "
+            "PowerPoint is installed and you can open this file." % (e,)
+        )
     paths = []
-    for i, page in enumerate(doc, start=1):
-        out = "%s-%02d.png" % (prefix, i)
-        page.get_pixmap(matrix=mat).save(out)
-        paths.append(out)
+    try:
+        ps = pres.PageSetup
+        w_px = max(1, int(round(ps.SlideWidth * PT_TO_IN * dpi)))
+        h_px = max(1, int(round(ps.SlideHeight * PT_TO_IN * dpi)))
+        for i in range(1, pres.Slides.Count + 1):
+            # PowerPoint needs a native, absolute path (backslashes) — a
+            # relative or forward-slash path makes Slide.Export fail.
+            out = os.path.normpath(os.path.abspath(
+                os.path.join(out_dir, "slide-%02d.png" % i)))
+            pres.Slides(i).Export(out, "PNG", w_px, h_px)
+            paths.append(out)
+    finally:
+        pres.Close()
+        powerpoint.Quit()
     return paths
 
 
@@ -129,8 +111,7 @@ def main(argv=None):
     out_dir = args.out or (os.path.splitext(args.pptx)[0] + ".thumbs")
     os.makedirs(out_dir, exist_ok=True)
 
-    pdf = pptx_to_pdf(args.pptx, out_dir)
-    pngs = pdf_to_pngs(pdf, out_dir, args.dpi)
+    pngs = pptx_to_pngs(args.pptx, out_dir, args.dpi)
     grid = os.path.join(os.path.dirname(os.path.abspath(args.pptx)), base + ".grid.png")
     make_grid(pngs, grid, args.cols)
     print("Rendered %d slide image(s) in %s" % (len(pngs), out_dir))

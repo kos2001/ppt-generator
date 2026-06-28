@@ -1,0 +1,22 @@
+{
+  "template": "samsung",
+  "title": "Diagram Demo",
+  "slides": [
+    {"layout": "diagram", "title": "Process · 처리 파이프라인", "diagram": {"type": "process", "nodes": [
+      {"title": "수집", "desc": "데이터 인입"}, {"title": "정제", "desc": "전처리·검증"},
+      {"title": "분석", "desc": "모델 추론"}, {"title": "배포", "desc": "결과 전달"}]}},
+    {"layout": "diagram", "title": "Cycle · 반복 개선 루프", "diagram": {"type": "cycle", "nodes": [
+      {"title": "계획", "desc": "Plan"}, {"title": "실행", "desc": "Do"},
+      {"title": "점검", "desc": "Check"}, {"title": "개선", "desc": "Act"}]}},
+    {"layout": "diagram", "title": "Hierarchy · 조직 구조", "diagram": {"type": "hierarchy", "nodes": [
+      {"title": "플랫폼 본부"}, {"title": "데이터", "desc": "수집·저장"},
+      {"title": "모델", "desc": "학습·서빙"}, {"title": "서비스", "desc": "API·UX"}]}},
+    {"layout": "diagram", "title": "Pyramid · 가치 계층", "diagram": {"type": "pyramid", "nodes": [
+      {"title": "비전"}, {"title": "전략"}, {"title": "실행 과제"}, {"title": "기반 데이터"}]}},
+    {"layout": "diagram", "title": "Funnel · 전환 깔때기", "diagram": {"type": "funnel", "nodes": [
+      {"title": "방문"}, {"title": "가입"}, {"title": "활성"}, {"title": "결제"}]}},
+    {"layout": "diagram", "title": "Timeline · 로드맵", "diagram": {"type": "timeline", "nodes": [
+      {"title": "1분기", "desc": "PoC"}, {"title": "2분기", "desc": "파일럿"},
+      {"title": "3분기", "desc": "정식 출시"}, {"title": "4분기", "desc": "확장"}]}}
+  ]
+}
