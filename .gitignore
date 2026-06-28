@@ -18,3 +18,9 @@ ppt-generator-workspace/
 *.grid.png
 /assets/cca_img/
 /assets/img_src/
+
+# Deck outputs — generated artifacts, not source (removed from the repo)
+decks/
+
+# Eval fixtures are binary mixed decks supplied locally (see evals/fixtures/README.md)
+evals/fixtures/*.pptx
