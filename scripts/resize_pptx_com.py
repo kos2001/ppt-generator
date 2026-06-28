@@ -59,6 +59,7 @@ re-run removes the chrome it added before re-adding it (no duplicate stacking).
 """
 import argparse
 import os
+import re
 import shutil
 import sys
 from datetime import datetime
@@ -242,8 +243,12 @@ def cmd_resize(path, args):
             bt = (args.top * to_pt) if args.top is not None else None
             box_pt = (bl, bt, bw, bh)  # bl/bt None -> per-picture current pos
 
-        slide_range = ([args.slide] if args.slide
-                       else range(1, pres.Slides.Count + 1))
+        if args.slides:
+            slide_range = _parse_slide_selection(args.slides, pres.Slides.Count)
+        elif args.slide:
+            slide_range = [args.slide]
+        else:
+            slide_range = range(1, pres.Slides.Count + 1)
         for i in slide_range:
             slide = pres.Slides(i)
             pics = _pictures(slide)
@@ -357,10 +362,24 @@ def _remove_existing_chrome(slide):
         sh.Delete()
 
 
+def _chrome_in(slide_h):
+    """Scaled 'inch' so chrome geometry stays proportional on any page size.
+
+    build_pptx scales its chrome to slide height; the COM chrome must match or a
+    branded slide gets a thinner bar / mis-anchored number next to native slides.
+    Baseline is a 7.5in-tall (16:9) slide, where this returns the literal 72pt."""
+    return slide_h / 7.5
+
+
 def _add_chrome_to_slide(slide, theme, *, slide_no, total, eyebrow, footer,
                          numbers, slide_w, slide_h):
-    """Insert one template's chrome on a slide. Points; mirrors build_pptx."""
-    IN = 72.0
+    """Insert one template's chrome on a slide. Points; mirrors build_pptx.
+
+    Geometry and font sizes scale with slide height (see _chrome_in) so the bar,
+    brand marker, and page number line up with natively-built chrome regardless
+    of the deck's page size."""
+    IN = _chrome_in(slide_h)
+    sc = IN / 72.0  # font scale relative to the 7.5in baseline
     margin = 0.7 * IN
     bar_h = 1.0 * IN
     has_label = bool(theme.get("header_label"))
@@ -374,13 +393,13 @@ def _add_chrome_to_slide(slide, theme, *, slide_no, total, eyebrow, footer,
         if eyebrow:
             _add_text_com(slide, eyebrow.upper(), margin, 0.13 * IN,
                           title_w, 0.24 * IN, font=theme["body_font"],
-                          size=11, color_hex=on_bar, bold=True,
+                          size=11 * sc, color_hex=on_bar, bold=True,
                           name=TMPL_CHROME_TAG + "eyebrow")
         if has_label:  # brand / classification marker, top-right on the bar
             _add_text_com(slide, theme["header_label"],
                           slide_w - margin - 3.0 * IN, 0.2 * IN,
                           3.0 * IN, 0.6 * IN, font=theme["body_font"],
-                          size=18, color_hex=on_bar, bold=True,
+                          size=18 * sc, color_hex=on_bar, bold=True,
                           align=PP_ALIGN_RIGHT,
                           name=TMPL_CHROME_TAG + "brand")
 
@@ -388,13 +407,13 @@ def _add_chrome_to_slide(slide, theme, *, slide_no, total, eyebrow, footer,
     if footer:
         _add_text_com(slide, footer, margin, slide_h - 0.5 * IN,
                       slide_w - 2 * margin - 1.0 * IN, 0.3 * IN,
-                      font=theme["body_font"], size=10, color_hex=muted,
+                      font=theme["body_font"], size=10 * sc, color_hex=muted,
                       name=TMPL_CHROME_TAG + "footer")
     if numbers and slide_no is not None:
         num = "%d / %d" % (slide_no, total) if total else str(slide_no)
         _add_text_com(slide, num, slide_w - margin - 1.6 * IN,
                       slide_h - 0.62 * IN, 1.6 * IN, 0.42 * IN,
-                      font=theme["body_font"], size=16, color_hex=muted,
+                      font=theme["body_font"], size=16 * sc, color_hex=muted,
                       align=PP_ALIGN_RIGHT, name=TMPL_CHROME_TAG + "pageno")
 
 
@@ -489,6 +508,123 @@ def cmd_chrome(path, args):
     return 0
 
 
+_PAGENO_RE = re.compile(r"^\s*\d+\s*/\s*\d+\s*$")
+
+
+def _find_pageno_shape(slide):
+    """Return an existing 'N / M' page-number textbox on the slide, if any.
+
+    Matches both COM-tagged page numbers from a prior --chrome pass and the
+    native ones build_pptx bakes in, so renumbering updates in place instead of
+    stacking a second number on top."""
+    for sh in slide.Shapes:
+        try:
+            if not sh.HasTextFrame or not sh.TextFrame.HasText:
+                continue
+            if _PAGENO_RE.match(sh.TextFrame.TextRange.Text):
+                return sh
+        except com_error:
+            continue
+    return None
+
+
+def cmd_renumber(path, args):
+    """Renumber every slide to 'i / total' over the whole deck via COM.
+
+    Standard practice for these decks: a mixed deck (native + inserted image
+    slides) should read 1/N .. N/N by physical position, not carry a stale
+    logical count. Updates an existing page-number textbox in place where one
+    exists (native slides), and adds one bottom-right where none does (title,
+    closing, and freshly-chromed image slides)."""
+    theme = get_theme(args.renumber)
+    powerpoint, pres = _open(path, read_only=False)
+    try:
+        total = pres.Slides.Count
+        ps = pres.PageSetup
+        slide_w, slide_h = ps.SlideWidth, ps.SlideHeight
+        IN = _chrome_in(slide_h)  # match build_pptx / chrome geometry at any size
+        updated = added = 0
+        for i in range(1, total + 1):
+            slide = pres.Slides(i)
+            label = "%d / %d" % (i, total)
+            sh = _find_pageno_shape(slide)
+            if sh is not None:
+                sh.TextFrame.TextRange.Text = label
+                updated += 1
+            else:
+                _add_text_com(slide, label, slide_w - 0.7 * IN - 1.6 * IN,
+                              slide_h - 0.62 * IN, 1.6 * IN, 0.42 * IN,
+                              font=theme["body_font"], size=16 * (IN / 72.0),
+                              color_hex=theme["text_muted"],
+                              align=PP_ALIGN_RIGHT,
+                              name=TMPL_CHROME_TAG + "pageno")
+                added += 1
+        print("Renumbered %d slide(s) to 1/%d..%d/%d (%d updated in place, "
+              "%d added)." % (total, total, total, total, updated, added))
+
+        out = args.out
+        if out and os.path.abspath(out) != os.path.abspath(path):
+            pres.SaveAs(os.path.abspath(out), PP_SAVE_PPTX)
+            print("Saved -> %s" % out)
+        else:
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            backup = "%s.bak-%s.pptx" % (os.path.splitext(path)[0], stamp)
+            shutil.copy2(path, backup)
+            print("Backed up original -> %s" % backup)
+            pres.Save()
+            print("Saved in place -> %s" % path)
+    except com_error as e:
+        print("COM error during renumber/save:", e, file=sys.stderr)
+        return 1
+    finally:
+        pres.Close()
+        powerpoint.Quit()
+    return 0
+
+
+def cmd_delete_slides(path, args):
+    """Delete slides by 1-based selection via COM.
+
+    The DRM-safe counterpart to edit_pptx.py's delete_slide op: when a deck is
+    rights-managed, python-pptx cannot open it, so foreign/inserted slides have
+    to be removed through PowerPoint itself. Deletes in descending order so each
+    Delete() doesn't shift the indices of slides not yet removed.
+    """
+    powerpoint, pres = _open(path, read_only=False)
+    try:
+        total = pres.Slides.Count
+        targets = sorted(set(_parse_slide_selection(args.delete_slides, total)),
+                         reverse=True)
+        for i in targets:
+            pres.Slides(i).Delete()
+        print("Deleted slide(s) %s (deck was %d, now %d)."
+              % (", ".join(map(str, sorted(targets))), total, pres.Slides.Count))
+
+        out = args.out
+        if out and os.path.abspath(out) != os.path.abspath(path):
+            pres.SaveAs(os.path.abspath(out), PP_SAVE_PPTX)
+            print("Saved -> %s" % out)
+        else:
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            backup = "%s.bak-%s.pptx" % (os.path.splitext(path)[0], stamp)
+            shutil.copy2(path, backup)
+            print("Backed up original -> %s" % backup)
+            pres.Save()
+            print("Saved in place -> %s" % path)
+    except ValueError as e:
+        print("Bad --delete-slides selection:", e, file=sys.stderr)
+        return 1
+    except com_error as e:
+        print("COM error during delete/save:", e, file=sys.stderr)
+        print("If Open worked but Save failed, the DRM policy likely grants "
+              "view/automation but not save rights.", file=sys.stderr)
+        return 1
+    finally:
+        pres.Close()
+        powerpoint.Quit()
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Resize pictures in a (possibly DRM-protected) PPTX via "
@@ -510,10 +646,10 @@ def main():
                     help="--chrome: do not add page numbers")
     ap.add_argument("--slide", type=int, help="target slide (1-based); default all")
     ap.add_argument("--slides", metavar="LIST",
-                    help="--chrome: brand only these slides, e.g. 3,5 or 3-5 "
-                         "(1-based; default all). Use to chrome just the foreign "
-                         "image slides in a mixed deck without double-stamping "
-                         "the native ones.")
+                    help="restrict --chrome or --template/resize to these slides, "
+                         "e.g. 3,5 or 3-5 (1-based; default all). Use to fit/chrome "
+                         "just the foreign full-bleed image slides in a mixed deck "
+                         "without touching the native ones.")
     ap.add_argument("--picture", type=int,
                     help="target picture # on the slide (1-based); default all")
     # sizing modes (pick one)
@@ -534,6 +670,16 @@ def main():
     ap.add_argument("--top", type=float, help="set top position")
     ap.add_argument("--no-keep-aspect", action="store_true",
                     help="allow distortion in --scale/--width/--height modes")
+    ap.add_argument("--renumber", nargs="?", const=DEFAULT_THEME, default=None,
+                    metavar="NAME",
+                    help="renumber every slide 1/N..N/N by physical position "
+                         "via COM, updating existing page numbers in place and "
+                         "adding them where missing (no value = %s)"
+                         % DEFAULT_THEME)
+    ap.add_argument("--delete-slides", metavar="LIST", dest="delete_slides",
+                    help="delete these slides via COM, e.g. 10-16,18-27 "
+                         "(1-based). DRM-safe way to drop inserted/foreign "
+                         "slides when python-pptx can't open the deck.")
     ap.add_argument("--out", help="save to a new file instead of in place")
     args = ap.parse_args()
 
@@ -555,6 +701,10 @@ def main():
             return cmd_check(args.path)
         if args.do_list:
             return cmd_list(args.path)
+        if args.delete_slides is not None:
+            return cmd_delete_slides(args.path, args)
+        if args.renumber is not None:
+            return cmd_renumber(args.path, args)
         if args.chrome is not None:
             return cmd_chrome(args.path, args)
         if not any(modes):
