@@ -36,6 +36,15 @@ Any request to create, draft, restyle, read, or edit a slide deck / presentation
 / PPT. The user gives you a topic, an outline, notes, a document, or an existing
 `.pptx`, and expects slides back.
 
+## Match the user's language
+
+Reply in the language the user wrote in. When the user asks in Korean, answer in
+Korean — every clarifying question, status update, and final report. Mirror their
+language for English (or any other) too. This covers all prose you address to the
+user, including `AskUserQuestion` prompts and option labels; it does **not** force
+the deck's own content into that language — slide text follows the source material
+and any explicit instruction.
+
 ## Two modes — establish which one first
 
 This skill does two **independent** jobs that share nothing but the file format.
@@ -137,11 +146,11 @@ confirmation.
 
 ### 2. Choose a template
 
-Match the audience and tone. Default to `corporate` when unsure. See
-`references/templates.md` for the full catalog:
-
-`corporate` (business default) · `minimal` (design-forward) · `dark`
-(tech/keynote) · `vibrant` (pitch/marketing) · `academic` (lectures/research).
+**Default to `samsung`** (see §1) — don't deliberate over the template when the
+user named none. Only an explicitly named template overrides it. The full
+catalog in `references/templates.md` is for those explicit requests and for
+restyling: `samsung` · `corporate` · `minimal` · `dark` · `vibrant` ·
+`academic` · `report`.
 
 ### 3. Design the slides as a spec
 
@@ -212,48 +221,102 @@ This mode reads an existing `.pptx` and modifies it in place — keeping every
 untouched shape, image, and bit of formatting. Use it whenever the user has a
 file already and wants it changed rather than rebuilt.
 
+**Assume DRM first.** Treat every existing deck — and especially its images — as
+DRM/EDM-protected until proven otherwise, and reach for the **authorized COM path
+first** (these are corporate decks by default). So the *very first* action on a
+file is the COM check, not a python-pptx open:
+
+```bash
+python scripts/resize_pptx_com.py deck.pptx --check    # can the authorized session open it?
+python scripts/resize_pptx_com.py deck.pptx --list     # inspect pictures + sizes
+python scripts/extract_pptx_com.py  deck.pptx          # read text + notes
+```
+
+Then act through the COM scripts (`resize_pptx_com.py` for fit/`--chrome`/
+`--renumber`/`--delete-slides`, `diagram_com.py` for diagrams) — they edit frame
+geometry and add native shapes **without ever reading image pixels**, so they
+work even when DRM blocks image *extraction* (if a manual edit in PowerPoint
+works, so does the COM edit). Only when you've confirmed a file is genuinely
+*unprotected* (python-pptx opens it cleanly) should you drop to the lighter
+python-pptx tools (`inspect_pptx.py`, `edit_pptx.py`, `wrap_images.py`). Never
+assume you can read or extract an image's pixels up front. See **Authorized COM
+path** below for the full command set.
+
 **When the ask is vague ("이 파일 수정해 줘", "fix this deck") — don't ask what
 to change. Inspect first, then act.** A bare "fix it" is an invitation to find
 the problems, not a prompt to interview the user. Run `inspect_pptx.py` (and a
 `thumbnail.py` grid when the issue might be visual) to see the real state.
 
+**Never reuse a deck's own saved spec / thumbnails as the edit basis — they are
+stale scratch, not the source of truth.** A deck this skill generated leaves a
+`*.spec.json` and a `*.thumbs/` grid beside it. On a *change* request, do **not**
+re-render that saved spec: it is the *previous* intent, so re-rendering it
+unchanged reproduces a byte-identical deck — a no-op that is never the edit the
+user asked for (file size may shift, the slides do not). Ignore the saved spec
+and PNGs entirely and **re-author the deck from scratch** — write a fresh spec
+for the topic (improving on what you see, e.g. prose→bullets, tighter
+noun-phrase titles) and render new thumbnails — or, when the user named a
+concrete change, edit the `.pptx` in place for that change. Either way, back up
+the original `.pptx` first and re-generate the thumbnail grid fresh; don't trust
+the old PNGs. (If you reconstruct or overwrite a spec, that reconstruction is
+also stale the moment the user asks to "수정" again — start over each time.)
+
 **First, always confirm the *actual physical slide count*** — the number of
-slides `inspect_pptx.py` reports — and compare it to what the footer page numbers
-claim (e.g. a "N / 12" stamp). They diverge often: image-only slides exported
+slides `inspect_pptx.py` reports (or `resize_pptx_com.py --list` on a DRM deck) —
+and compare it to what the footer page numbers claim (e.g. a "N / 12" stamp). They diverge often: image-only slides exported
 from another tool get inserted *between* content slides, so a deck whose footers
 read "/ 12" may physically hold 29 slides. Treat the physical count from
 `inspect_pptx.py` as ground truth — it drives `renumber_pages` (which restamps
 each slide as physical `position / total`), tells you whether foreign image
 slides snuck in, and prevents off-by-N edits when you address shapes by slide
-index. Note the real total in your first report. Then
-sort what you find into two buckets — and treat them differently:
+index. Note the real total in your first report. Then **unify the whole deck to
+the samsung template — don't ask, just do it.**
 
-- **Safe, reversible fixes → just do them, now.** These only adjust *form*, never
-  destroy content, so there's nothing to second-guess: brand/fit foreign or
-  off-template slides to match the deck (full-bleed images with no chrome),
-  renumber stale page numbers to physical `position / total` (`renumber_pages`
-  does exactly this — don't talk yourself out of it), refit distorted or
-  overflowing images, correct an obviously wrong value. Apply every fix in this
-  bucket before you consider asking anything.
-- **Destructive or judgment calls → flag them *after*, don't freeze on them.**
-  Deleting slides, dropping content, or rewriting wording can't be undone and may
-  not match intent, so these you raise rather than assume. But raising them is the
-  *last* step, not a gate on the safe fixes above — never withhold a reversible
-  improvement just because some adjacent decision needs the user.
+**Simplified 수정 rules (the user's standing instruction — follow them exactly):**
 
-The trap to avoid: a slide can be *off-template* (foreign styling — a safe
-branding fix) **and** *off-topic* (content that may not belong — a delete
-judgment call) at once. Brand it regardless; that's reversible and on-template
-either way. Then, separately, note the content concern: "이미지 슬라이드 N장을
-템플릿에 맞춰 브랜딩하고 번호를 다시 매겼어요. 다만 그 12장은 주제와 달라 보이는데
-— 뺄까요, 둘까요?" That mirrors the right instinct: fix what's clearly fixable,
-surface what genuinely needs a human call. Reserve an up-front question only when
-the deck has **no clear defect to fix** and the intent is truly underdetermined.
-The default is momentum: inspect, make every safe fix, report, then ask.
+1. **Off-topic slides too → unify, never interrogate.** Even when slides from a
+   *different topic* are mixed in (a band of foreign image slides from another
+   deck), do **not** ask whether to keep or remove them. Keep every slide and
+   bring the whole deck to the same samsung look, then renumber `1/N..N/N` by
+   physical position. Unify; don't remove. (Deletion happens only when the user
+   *explicitly* says "삭제해 줘" — and that one case still needs a quick confirm.)
+2. **Image slides → assume DRM, use COM only.** Don't try python-pptx on them.
+   Run `resize_pptx_com.py` to fit each picture into the samsung content box and
+   apply the samsung header/footer, then renumber. It reads no image pixels, so
+   it works even under DRM. (Text/native slides are already samsung — just
+   confirm and renumber.)
+3. **Plain words to the user — no jargon.** When reporting what you did, never
+   say "chrome" or "branding". Use everyday phrasing: "삼성 템플릿 적용",
+   "머리말·꼬리말 맞춤", "페이지 번호 정리". (The script flag is still `--chrome`
+   on the command line; just don't surface that word to the user.)
+4. **Reply in the user's language.** Mirror whatever language the request used
+   for every status update and the final report.
+5. **Footer = page number only.** The footer band (bottom of the slide) must
+   hold **only** the page number — never "Confidential" or any other footer
+   text. So **do not pass `--footer`** on the COM `--chrome`/`wrap_images` path,
+   and strip any existing footer text shapes (named `tmpl_chrome_footer`) so
+   only the page number (`tmpl_chrome_pageno`) remains. A top-of-slide
+   classification marker (samsung's top-right "Confidential", a *header*) is a
+   separate element and is left alone — this rule is about the footer only.
 
-> Works on ordinary, unprotected `.pptx` only. A DRM-protected file must first
-> be exported to a plaintext copy through its DRM client by an authorized user;
-> these tools do not bypass DRM.
+So the standard 수정 pass is: inspect → confirm physical count → fit any image
+slides into the samsung box via COM and apply the samsung header/footer (footer
+shows the page number only) → renumber the whole deck → report in plain language.
+No keep/remove question.
+
+**Match every foreign slide's format — don't leave them deleted in your head.**
+Since you keep every slide (rule 1, no keep/remove question), off-topic inserted
+slides (content from another deck) still need work: bring their **template,
+header, and footer** into line with the rest of the deck. The defect
+that remains is form, not content. Concretely — if the deck already has an
+*on-brand band* of the same kind of foreign slides (e.g. one set already fitted +
+chromed, another set still raw full-bleed), match the raw set to the branded one:
+measure the branded band's content box with `--list`, fit the raw images into the
+*same* box, add the *same* chrome (header bar + page number only — no footer
+text), then renumber the whole deck. The two bands — and every native slide — should end up
+visually consistent. Do this whenever a deck has inserted heterogeneous slides;
+never leave kept foreign slides looking off-template just because their content
+is off-topic.
 
 **DRM-protected decks.** Enterprise document-security DRM (e.g. Fasoo, MarkAny,
 Softcamp — common in Korean corporations) encrypts the file so python-pptx can't
@@ -301,8 +364,9 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
 
   `--chrome [NAME]` — **add the template's header/footer chrome** to a DRM deck.
   `--template` only moves picture *frames*; `--chrome` inserts *new native
-  shapes* (header bar, `SAMSUNG DS` brand marker, page numbers, optional
-  `--eyebrow`/`--footer`) on every slide, mirroring the bar-style chrome in
+  shapes* (header bar, `SAMSUNG DS` brand marker, page numbers; `--eyebrow` is
+  optional but **leave `--footer` off** — the footer shows only the page number)
+  on every slide, mirroring the bar-style chrome in
   `build_pptx.py`. PowerPoint decrypts in the authorized session, the shapes are
   added, and `Save()` re-encrypts — so a DRM deck the user can edit manually
   gets the same look as a natively rendered one (the COM equivalent of
@@ -312,9 +376,12 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
 
   ```bash
   python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
-  python scripts/resize_pptx_com.py tmp.pptx  --chrome  samsung \
-      --eyebrow "Project" --footer "Confidential" --out final.pptx
+  python scripts/resize_pptx_com.py tmp.pptx  --chrome  samsung --out final.pptx
   ```
+
+  **Footer holds the page number only** — do not pass `--footer` (and samsung
+  uses no eyebrow, so skip `--eyebrow` too). The bar's top-right marker and the
+  page number are added automatically; the footer band stays page-number-only.
 
   **Fitting and chrome go together.** `--template` alone leaves a picture
   centered on a *bare white slide* — it is not "applying the template," only
@@ -337,7 +404,7 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
   # mixed DRM deck: fit images, then chrome ONLY the foreign image slides 3 & 5
   python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
   python scripts/resize_pptx_com.py tmp.pptx  --chrome samsung --slides 3,5 \
-      --no-numbers --footer "Confidential" --out final.pptx
+      --no-numbers --out final.pptx
   ```
 
   Chrome geometry scales with the deck's page height (relative to a 7.5in-tall
@@ -528,8 +595,7 @@ chrome" path is bundled as one command, so you don't re-orchestrate it each time
 
 ```bash
 # from an image-only deck (one picture per slide):
-python scripts/wrap_images.py --from-pptx deck.pptx --template samsung \
-    --eyebrow "PROJECT NAME" --footer "Confidential" -o out.pptx
+python scripts/wrap_images.py --from-pptx deck.pptx --template samsung -o out.pptx
 # or from a folder of images (natural-sorted slide1, slide2, … slide10):
 python scripts/wrap_images.py --images ./imgs --template samsung -o out.pptx
 ```
@@ -537,9 +603,9 @@ python scripts/wrap_images.py --images ./imgs --template samsung -o out.pptx
 It renders a chrome-only frame deck in the chosen template (header bar, brand
 marker, page numbers), then fits each image into the body (`--fit contain`
 default, `cover` to fill-and-crop). Output slide count = number of images, so
-the deck's length is preserved. Use `--eyebrow` for a running label in the bar
-and `--footer` for footer text. It does **not** make text editable — for that,
-use the recreate path above.
+the deck's length is preserved. The footer shows only the page number — leave
+`--footer` off (and samsung uses no eyebrow). It does **not** make text editable
+— for that, use the recreate path above.
 
 **Escape hatch — raw OOXML.** For changes python-pptx can't reach (theme colors,
 slide-master tweaks, custom geometry), unpack the deck to its XML tree, edit the
