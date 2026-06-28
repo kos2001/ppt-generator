@@ -247,19 +247,30 @@ to change. Inspect first, then act.** A bare "fix it" is an invitation to find
 the problems, not a prompt to interview the user. Run `inspect_pptx.py` (and a
 `thumbnail.py` grid when the issue might be visual) to see the real state.
 
-**Never reuse a deck's own saved spec / thumbnails as the edit basis — they are
-stale scratch, not the source of truth.** A deck this skill generated leaves a
-`*.spec.json` and a `*.thumbs/` grid beside it. On a *change* request, do **not**
-re-render that saved spec: it is the *previous* intent, so re-rendering it
-unchanged reproduces a byte-identical deck — a no-op that is never the edit the
-user asked for (file size may shift, the slides do not). Ignore the saved spec
-and PNGs entirely and **re-author the deck from scratch** — write a fresh spec
-for the topic (improving on what you see, e.g. prose→bullets, tighter
-noun-phrase titles) and render new thumbnails — or, when the user named a
-concrete change, edit the `.pptx` in place for that change. Either way, back up
-the original `.pptx` first and re-generate the thumbnail grid fresh; don't trust
-the old PNGs. (If you reconstruct or overwrite a spec, that reconstruction is
-also stale the moment the user asks to "수정" again — start over each time.)
+**On a 수정/edit request, DELETE the deck's pre-existing stale scratch — always,
+before you re-author or re-render the deck.** A deck this skill generated leaves
+sibling scratch files next to it: `NAME.spec.json`, `NAME.grid.png`, and a
+`NAME.thumbs/` folder of per-slide PNGs. They are the *previous* intent, **not**
+the source of truth — re-rendering the saved spec unchanged reproduces a
+byte-identical deck, a no-op that is never the edit the user asked for. So the
+**first step of every edit is to back up the `.pptx` and then delete that scratch
+outright** so nothing stale can carry over or be accidentally re-rendered (any
+grid you render *afterward* to inspect the current deck is fresh, not stale):
+
+```bash
+cp NAME.pptx NAME.before-edit.bak.pptx     # keep a safety copy of the original
+rm -f  NAME.spec.json NAME.grid.png        # delete stale spec + grid
+rm -rf NAME.thumbs/                        # delete stale per-slide PNGs
+```
+
+This is unconditional: if those files exist, remove them — never reuse, never
+"ignore but leave them." (Keep only the `.before-edit.bak.pptx` backup; that is a
+safety copy, not stale scratch.) Then **re-author the deck from scratch** — write
+a fresh spec for the topic (improving on what you see, e.g. prose→bullets, tighter
+noun-phrase titles) and render new thumbnails — or, when the user named a concrete
+change, edit the `.pptx` in place for that change. Any spec you write during this
+edit is itself stale the moment the user asks to "수정" again, so it too gets
+deleted at the start of the next edit — start clean every time.
 
 **First, always confirm the *actual physical slide count*** — the number of
 slides `inspect_pptx.py` reports (or `resize_pptx_com.py --list` on a DRM deck) —
@@ -299,10 +310,11 @@ the samsung template — don't ask, just do it.**
    classification marker (samsung's top-right "Confidential", a *header*) is a
    separate element and is left alone — this rule is about the footer only.
 
-So the standard 수정 pass is: inspect → confirm physical count → fit any image
-slides into the samsung box via COM and apply the samsung header/footer (footer
-shows the page number only) → renumber the whole deck → report in plain language.
-No keep/remove question.
+So the standard 수정 pass is: back up the `.pptx` and delete any stale scratch
+(`NAME.spec.json` / `NAME.grid.png` / `NAME.thumbs/`) → inspect → confirm physical
+count → fit any image slides into the samsung box via COM and apply the samsung
+header/footer (footer shows the page number only) → renumber the whole deck →
+report in plain language. No keep/remove question.
 
 **Match every foreign slide's format — don't leave them deleted in your head.**
 Since you keep every slide (rule 1, no keep/remove question), off-topic inserted
