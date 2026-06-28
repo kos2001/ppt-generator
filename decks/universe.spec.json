@@ -1,0 +1,263 @@
+{
+  "template": "samsung",
+  "title": "우주: 기원에서 탐사까지",
+  "slide_numbers": true,
+  "slides": [
+    {
+      "layout": "title",
+      "title": "우주: 기원에서 탐사까지",
+      "subtitle": "다양한 시각 포맷으로 보는 우주 개관",
+      "author": "Claude Code",
+      "date": "2026",
+      "background": "000000"
+    },
+    {
+      "layout": "bullets",
+      "title": "오늘 다룰 내용",
+      "subtitle": "기원 → 구성 → 별의 일생 → 탐사, 네 부분으로.",
+      "bullets": [
+        {"text": "우주의 탄생 — 빅뱅과 팽창", "bold": true},
+        {"text": "우주의 구성 — 물질과 암흑성분", "bold": true},
+        {"text": "별의 일생 — 탄생과 죽음의 순환", "bold": true},
+        {"text": "우주 탐사 — 로켓에서 우주망원경까지", "bold": true}
+      ]
+    },
+    {
+      "layout": "section",
+      "number": "01",
+      "title": "우주의 탄생",
+      "subtitle": "138억 년 전, 모든 것의 시작"
+    },
+    {
+      "layout": "metrics",
+      "title": "숫자로 보는 우주",
+      "subtitle": "직관을 넘어서는 규모와 시간.",
+      "metrics": [
+        {"value": "138억", "label": "우주의 나이", "sublabel": "년 (빅뱅 이후)"},
+        {"value": "930억", "label": "관측 가능 지름", "sublabel": "광년"},
+        {"value": "~2조", "label": "은하 수", "sublabel": "관측 가능 우주"},
+        {"value": "73", "label": "허블 상수", "sublabel": "km/s/Mpc"}
+      ]
+    },
+    {
+      "layout": "diagram",
+      "title": "우주의 연대기",
+      "diagram": {
+        "type": "timeline",
+        "nodes": [
+          {"title": "빅뱅", "desc": "t = 0"},
+          {"title": "첫 원자", "desc": "38만 년"},
+          {"title": "첫 별·은하", "desc": "수억 년"},
+          {"title": "태양계 형성", "desc": "46억 년 전"},
+          {"title": "현재", "desc": "138억 년"}
+        ]
+      }
+    },
+    {
+      "layout": "bullets",
+      "title": "빅뱅의 증거",
+      "subtitle": "이론이 아니라 관측으로 뒷받침된다.",
+      "bullets": [
+        {"text": "우주배경복사(CMB) — 초기 우주의 잔광", "bold": true},
+        {"text": "2.7K로 균일, 미세한 온도 요동", "level": 1},
+        {"text": "은하의 적색편이 — 멀수록 빠르게 후퇴", "bold": true},
+        {"text": "경원소 존재비 — 수소·헬륨 비율 예측 일치", "bold": true}
+      ]
+    },
+    {
+      "layout": "section",
+      "number": "02",
+      "title": "우주의 구성",
+      "subtitle": "보이는 물질은 5%뿐"
+    },
+    {
+      "layout": "chart",
+      "title": "우주의 에너지·물질 구성비",
+      "chart": {
+        "type": "pie",
+        "categories": ["암흑에너지", "암흑물질", "일반물질"],
+        "series": [
+          {"name": "구성비(%)", "values": [68, 27, 5]}
+        ],
+        "data_labels": true
+      }
+    },
+    {
+      "layout": "comparison",
+      "title": "암흑물질 vs 암흑에너지",
+      "left": {
+        "heading": "암흑물질",
+        "bullets": [
+          "중력으로 작용, 빛과 무반응",
+          "은하 회전곡선으로 추정",
+          "구조 형성의 골격",
+          "전체의 ~27%"
+        ]
+      },
+      "right": {
+        "heading": "암흑에너지",
+        "bullets": [
+          "공간을 가속 팽창시킴",
+          "음(-)의 압력처럼 작용",
+          "정체는 미해결 난제",
+          "전체의 ~68%"
+        ]
+      }
+    },
+    {
+      "layout": "diagram",
+      "title": "우주의 계층 구조",
+      "diagram": {
+        "type": "hierarchy",
+        "nodes": [
+          {"title": "관측 가능 우주"},
+          {"title": "은하단", "desc": "은하 수백~수천"},
+          {"title": "은하", "desc": "항성 수천억"},
+          {"title": "항성계", "desc": "별 + 행성"}
+        ]
+      }
+    },
+    {
+      "layout": "section",
+      "number": "03",
+      "title": "별의 일생",
+      "subtitle": "성운에서 태어나 우주로 돌아간다"
+    },
+    {
+      "layout": "diagram",
+      "title": "별의 진화 단계",
+      "diagram": {
+        "type": "process",
+        "nodes": [
+          {"title": "성운", "desc": "가스·먼지 구름"},
+          {"title": "원시별", "desc": "중력 수축"},
+          {"title": "주계열성", "desc": "수소 핵융합"},
+          {"title": "적색거성", "desc": "외피 팽창"},
+          {"title": "백색왜성", "desc": "또는 초신성"}
+        ]
+      }
+    },
+    {
+      "layout": "diagram",
+      "title": "성간 물질의 순환",
+      "diagram": {
+        "type": "cycle",
+        "nodes": [
+          {"title": "성운", "desc": "별의 재료"},
+          {"title": "별 형성", "desc": "핵융합 점화"},
+          {"title": "초신성", "desc": "중원소 방출"},
+          {"title": "성간 물질", "desc": "재농축"}
+        ]
+      }
+    },
+    {
+      "layout": "two_column",
+      "title": "별의 죽음, 두 갈래",
+      "left": {
+        "heading": "가벼운 별 (≤ 8 태양질량)",
+        "bullets": ["적색거성 → 행성상성운", "백색왜성으로 남음", "서서히 식어감"]
+      },
+      "right": {
+        "heading": "무거운 별 (> 8 태양질량)",
+        "bullets": ["초신성 폭발", "중성자별 또는 블랙홀", "중원소를 우주로"]
+      }
+    },
+    {
+      "layout": "bullets",
+      "title": "블랙홀의 핵심",
+      "subtitle": "빛조차 빠져나오지 못하는 시공간의 함정.",
+      "bullets": [
+        {"text": "사건의 지평선 — 되돌아올 수 없는 경계", "bold": true},
+        {"text": "특이점 — 밀도가 발산하는 중심", "bold": true},
+        {"text": "2019년 M87, 첫 블랙홀 그림자 촬영", "bold": true},
+        {"text": "은하 중심마다 초대질량 블랙홀 존재", "bold": true}
+      ]
+    },
+    {
+      "layout": "section",
+      "number": "04",
+      "title": "우주 탐사",
+      "subtitle": "지상에서 심우주까지"
+    },
+    {
+      "layout": "table",
+      "title": "태양계 행성 비교",
+      "table": {
+        "header": ["행성", "지름(km)", "위성 수", "공전주기"],
+        "rows": [
+          ["수성", "4,879", "0", "88일"],
+          ["지구", "12,742", "1", "365일"],
+          ["화성", "6,779", "2", "687일"],
+          ["목성", "139,820", "95", "11.9년"],
+          ["토성", "116,460", "146", "29.5년"],
+          ["해왕성", "49,244", "16", "165년"]
+        ]
+      }
+    },
+    {
+      "layout": "chart",
+      "title": "태양으로부터의 거리",
+      "chart": {
+        "type": "column",
+        "categories": ["수성", "금성", "지구", "화성", "목성", "토성", "천왕성", "해왕성"],
+        "series": [
+          {"name": "거리(AU)", "values": [0.39, 0.72, 1.0, 1.52, 5.2, 9.5, 19.2, 30.1]}
+        ],
+        "data_labels": true
+      }
+    },
+    {
+      "layout": "diagram",
+      "title": "로켓 발사에서 궤도 진입까지",
+      "diagram": {
+        "type": "flowchart",
+        "direction": "LR",
+        "nodes": [
+          {"id": "a", "title": "발사", "desc": "이륙"},
+          {"id": "b", "title": "단 분리", "desc": "1단 연소 종료"},
+          {"id": "c", "title": "자세 점검", "desc": "텔레메트리"},
+          {"id": "d", "title": "궤도 진입", "desc": "목표 속도"},
+          {"id": "e", "title": "재점화", "desc": "보정 분사"}
+        ],
+        "edges": [
+          ["a", "b"], ["b", "c"],
+          {"from": "c", "to": "d", "label": "정상"},
+          {"from": "c", "to": "e", "label": "편차"},
+          {"from": "e", "to": "c", "label": "재점검"}
+        ]
+      }
+    },
+    {
+      "layout": "diagram",
+      "title": "우주 탐사 주요 이정표",
+      "diagram": {
+        "type": "timeline",
+        "nodes": [
+          {"title": "1957", "desc": "스푸트니크 1호"},
+          {"title": "1969", "desc": "아폴로 11호 달 착륙"},
+          {"title": "1990", "desc": "허블 우주망원경"},
+          {"title": "2021", "desc": "제임스 웹 발사"}
+        ]
+      }
+    },
+    {
+      "layout": "quote",
+      "title": "맺는 말",
+      "quote": "우리는 별의 물질로 이루어져 있다.",
+      "attribution": "칼 세이건"
+    },
+    {
+      "layout": "content",
+      "title": "다가오는 우주의 시대",
+      "body": [
+        "재사용 로켓이 발사 비용을 끌어내리며 저궤도 활용이 급격히 확대되고 있다. 달 복귀와 화성 유인 탐사가 현실적 일정으로 논의되는 단계다.",
+        "제임스 웹 등 차세대 관측 장비는 초기 우주와 외계행성 대기를 직접 들여다보며, 생명 거주 가능성에 대한 단서를 모으고 있다."
+      ]
+    },
+    {
+      "layout": "closing",
+      "title": "감사합니다",
+      "subtitle": "질문과 토론 환영합니다"
+    }
+  ]
+}

@@ -44,8 +44,18 @@ Workflow (do these in order):
     #    save to a new file instead of editing in place:
     python scripts/resize_pptx_com.py deck.pptx --template --out resized.pptx
 
+    # 4) Add the template's header/footer CHROME (works on DRM decks too).
+    #    Unlike --template (frame geometry only), --chrome ADDS native shapes:
+    #    a header bar, brand marker, and page numbers on every slide.
+    python scripts/resize_pptx_com.py deck.pptx --chrome samsung \
+        --eyebrow "Project" --footer "Confidential"
+    #    Typical image-deck flow is two passes: fit the images, then chrome:
+    python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
+    python scripts/resize_pptx_com.py tmp.pptx  --chrome  samsung --out final.pptx
+
 Sizes are in centimeters by default (--unit cm|in|pt). In-place edits back up
-the original to <name>.bak-<timestamp>.pptx first.
+the original to <name>.bak-<timestamp>.pptx first. --chrome is idempotent: a
+re-run removes the chrome it added before re-adding it (no duplicate stacking).
 """
 import argparse
 import os
@@ -65,7 +75,7 @@ except ImportError:
     sys.exit(1)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from templates import body_box, DEFAULT_THEME  # shared template content box
+from templates import body_box, get_theme, DEFAULT_THEME  # shared template chrome
 
 # COM / Office constants
 MSO_PICTURE = 13          # msoPicture
@@ -73,6 +83,17 @@ MSO_LINKED_PICTURE = 11   # msoLinkedPicture
 MSO_TRUE = -1
 MSO_FALSE = 0
 PP_SAVE_PPTX = 24         # ppSaveAsOpenXMLPresentation
+# Shape / text constants for --chrome (inserting header/footer via COM).
+MSO_SHAPE_RECTANGLE = 1   # msoShapeRectangle
+MSO_TEXT_HORIZONTAL = 1   # msoTextOrientationHorizontal
+PP_ALIGN_LEFT = 1
+PP_ALIGN_RIGHT = 3
+MSO_ANCHOR_TOP = 1
+MSO_ANCHOR_MIDDLE = 3
+PP_AUTOSIZE_NONE = 0
+# Every shape this tool inserts is named with this prefix, so a re-run can find
+# and remove the previous pass instead of stacking duplicate chrome.
+TMPL_CHROME_TAG = "tmpl_chrome_"
 
 # Unit conversions. PowerPoint measures shapes in points (1 in = 72 pt).
 UNIT_TO_PT = {"cm": 28.3464567, "in": 72.0, "pt": 1.0}
@@ -276,6 +297,198 @@ def cmd_resize(path, args):
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# Chrome insertion: draw a template's header bar / brand marker / footer /
+# page numbers onto every slide via COM. Unlike --template (which only moves
+# picture frames), this ADDS native shapes + text, so it works on a DRM deck
+# the user can edit manually: PowerPoint decrypts in the authorized session,
+# the shapes are inserted, and Save() re-encrypts. Geometry mirrors the
+# samsung/report "bar" chrome in build_pptx.py so a COM-chromed deck matches a
+# natively rendered one.
+# --------------------------------------------------------------------------- #
+def _bgr(hexstr):
+    """Office COM colors are integers in B-G-R byte order. Convert 'RRGGBB'."""
+    h = hexstr.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return r | (g << 8) | (b << 16)
+
+
+def _add_rect_com(slide, left, top, width, height, fill_hex, name):
+    sp = slide.Shapes.AddShape(MSO_SHAPE_RECTANGLE, left, top, width, height)
+    sp.Fill.Solid()
+    sp.Fill.ForeColor.RGB = _bgr(fill_hex)
+    sp.Line.Visible = MSO_FALSE
+    try:
+        sp.Shadow.Visible = MSO_FALSE
+    except com_error:
+        pass
+    sp.Name = name
+    return sp
+
+
+def _add_text_com(slide, text, left, top, width, height, *, font, size,
+                  color_hex, bold=False, align=PP_ALIGN_LEFT,
+                  anchor=MSO_ANCHOR_TOP, name):
+    tb = slide.Shapes.AddTextbox(MSO_TEXT_HORIZONTAL, left, top, width, height)
+    tf = tb.TextFrame
+    tf.WordWrap = MSO_TRUE
+    try:
+        tf.AutoSize = PP_AUTOSIZE_NONE
+    except com_error:
+        pass
+    tf.MarginLeft = tf.MarginRight = tf.MarginTop = tf.MarginBottom = 0
+    tf.VerticalAnchor = anchor
+    rng = tf.TextRange
+    rng.Text = text
+    rng.Font.Name = font
+    rng.Font.Size = size
+    rng.Font.Bold = MSO_TRUE if bold else MSO_FALSE
+    rng.Font.Color.RGB = _bgr(color_hex)
+    rng.ParagraphFormat.Alignment = align
+    tb.Name = name
+    return tb
+
+
+def _remove_existing_chrome(slide):
+    """Delete shapes a previous --chrome pass inserted (idempotent re-runs)."""
+    doomed = [sh for sh in slide.Shapes
+              if str(sh.Name).startswith(TMPL_CHROME_TAG)]
+    for sh in doomed:
+        sh.Delete()
+
+
+def _add_chrome_to_slide(slide, theme, *, slide_no, total, eyebrow, footer,
+                         numbers, slide_w, slide_h):
+    """Insert one template's chrome on a slide. Points; mirrors build_pptx."""
+    IN = 72.0
+    margin = 0.7 * IN
+    bar_h = 1.0 * IN
+    has_label = bool(theme.get("header_label"))
+    label_w = 3.0 * IN if has_label else 0
+    title_w = slide_w - 2 * margin - label_w
+
+    if theme.get("header_style") == "bar":
+        on_bar = theme["on_primary"]
+        _add_rect_com(slide, 0, 0, slide_w, bar_h, theme["primary"],
+                      TMPL_CHROME_TAG + "bar")
+        if eyebrow:
+            _add_text_com(slide, eyebrow.upper(), margin, 0.13 * IN,
+                          title_w, 0.24 * IN, font=theme["body_font"],
+                          size=11, color_hex=on_bar, bold=True,
+                          name=TMPL_CHROME_TAG + "eyebrow")
+        if has_label:  # brand / classification marker, top-right on the bar
+            _add_text_com(slide, theme["header_label"],
+                          slide_w - margin - 3.0 * IN, 0.2 * IN,
+                          3.0 * IN, 0.6 * IN, font=theme["body_font"],
+                          size=18, color_hex=on_bar, bold=True,
+                          align=PP_ALIGN_RIGHT,
+                          name=TMPL_CHROME_TAG + "brand")
+
+    muted = theme["text_muted"]
+    if footer:
+        _add_text_com(slide, footer, margin, slide_h - 0.5 * IN,
+                      slide_w - 2 * margin - 1.0 * IN, 0.3 * IN,
+                      font=theme["body_font"], size=10, color_hex=muted,
+                      name=TMPL_CHROME_TAG + "footer")
+    if numbers and slide_no is not None:
+        num = "%d / %d" % (slide_no, total) if total else str(slide_no)
+        _add_text_com(slide, num, slide_w - margin - 1.6 * IN,
+                      slide_h - 0.62 * IN, 1.6 * IN, 0.42 * IN,
+                      font=theme["body_font"], size=16, color_hex=muted,
+                      align=PP_ALIGN_RIGHT, name=TMPL_CHROME_TAG + "pageno")
+
+
+def _parse_slide_selection(spec, total):
+    """Turn '3,5' / '3-5' / '3,7-9' into a sorted list of 1-based indices.
+
+    Raises ValueError on malformed input or out-of-range indices so the caller
+    can surface a clear message instead of silently branding the wrong slides.
+    """
+    picked = set()
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            lo, hi = (int(x) for x in part.split("-", 1))
+            picked.update(range(lo, hi + 1))
+        else:
+            picked.add(int(part))
+    if not picked:
+        raise ValueError("no slides parsed from %r" % spec)
+    bad = [i for i in picked if i < 1 or i > total]
+    if bad:
+        raise ValueError("slide(s) %s out of range 1-%d"
+                         % (", ".join(map(str, sorted(bad))), total))
+    return sorted(picked)
+
+
+def cmd_chrome(path, args):
+    """Insert a template's header/footer chrome via COM.
+
+    By default every slide is chromed; --slides/--slide restrict it to selected
+    slides (for mixed decks where only the foreign image slides need branding).
+    Page numbers always use the physical 1-based position over the full deck, so
+    a partial chrome still numbers correctly against every other slide.
+    """
+    theme = get_theme(args.chrome)
+    if theme.get("header_style") != "bar" and not theme.get("header_label"):
+        print("Note: template %r has no bar-style header; only footer/page "
+              "numbers will be added." % args.chrome)
+    powerpoint, pres = _open(path, read_only=False)
+    try:
+        ps = pres.PageSetup
+        slide_w, slide_h = ps.SlideWidth, ps.SlideHeight
+        total = pres.Slides.Count
+        if args.slides:
+            targets = _parse_slide_selection(args.slides, total)
+        elif args.slide:
+            targets = _parse_slide_selection(str(args.slide), total)
+        else:
+            targets = list(range(1, total + 1))
+        for i in targets:
+            slide = pres.Slides(i)
+            _remove_existing_chrome(slide)  # clean re-run
+            _add_chrome_to_slide(slide, theme, slide_no=i, total=total,
+                                 eyebrow=args.eyebrow, footer=args.footer,
+                                 numbers=not args.no_numbers,
+                                 slide_w=slide_w, slide_h=slide_h)
+        extras = []
+        if args.footer:
+            extras.append("footer")
+        if not args.no_numbers:
+            extras.append("page numbers")
+        scope = ("all %d slide(s)" % total if len(targets) == total
+                 else "slide(s) %s of %d" % (", ".join(map(str, targets)), total))
+        print("Applied %s chrome to %s: header bar%s."
+              % (args.chrome, scope,
+                 (" + " + " + ".join(extras)) if extras else ""))
+
+        out = args.out
+        if out and os.path.abspath(out) != os.path.abspath(path):
+            pres.SaveAs(os.path.abspath(out), PP_SAVE_PPTX)
+            print("Saved -> %s" % out)
+        else:
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            backup = "%s.bak-%s.pptx" % (os.path.splitext(path)[0], stamp)
+            shutil.copy2(path, backup)
+            print("Backed up original -> %s" % backup)
+            pres.Save()
+            print("Saved in place -> %s" % path)
+    except ValueError as e:
+        print("Bad --slides selection:", e, file=sys.stderr)
+        return 1
+    except com_error as e:
+        print("COM error during chrome/save:", e, file=sys.stderr)
+        print("If Open worked but Save failed, the DRM policy likely grants "
+              "view/automation but not save rights.", file=sys.stderr)
+        return 1
+    finally:
+        pres.Close()
+        powerpoint.Quit()
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Resize pictures in a (possibly DRM-protected) PPTX via "
@@ -285,7 +498,22 @@ def main():
                     help="step 1: test that COM can open the file (read-only)")
     ap.add_argument("--list", action="store_true", dest="do_list",
                     help="step 2: list pictures and current sizes")
+    # chrome insertion (adds native header/footer shapes; works on DRM decks)
+    ap.add_argument("--chrome", nargs="?", const=DEFAULT_THEME, default=None,
+                    metavar="NAME",
+                    help="insert the template's header bar / brand marker / "
+                         "page numbers on every slide via COM (no value = %s)"
+                         % DEFAULT_THEME)
+    ap.add_argument("--eyebrow", help="--chrome: running label shown in the bar")
+    ap.add_argument("--footer", help="--chrome: footer text on every slide")
+    ap.add_argument("--no-numbers", action="store_true",
+                    help="--chrome: do not add page numbers")
     ap.add_argument("--slide", type=int, help="target slide (1-based); default all")
+    ap.add_argument("--slides", metavar="LIST",
+                    help="--chrome: brand only these slides, e.g. 3,5 or 3-5 "
+                         "(1-based; default all). Use to chrome just the foreign "
+                         "image slides in a mixed deck without double-stamping "
+                         "the native ones.")
     ap.add_argument("--picture", type=int,
                     help="target picture # on the slide (1-based); default all")
     # sizing modes (pick one)
@@ -327,6 +555,8 @@ def main():
             return cmd_check(args.path)
         if args.do_list:
             return cmd_list(args.path)
+        if args.chrome is not None:
+            return cmd_chrome(args.path, args)
         if not any(modes):
             ap.error("choose a resize mode: --template, --box, --scale, or "
                      "--width/--height (or use --check / --list)")

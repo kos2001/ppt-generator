@@ -1,0 +1,67 @@
+{
+  "template": "samsung",
+  "title": "Flowchart Demo",
+  "slides": [
+    {
+      "layout": "diagram",
+      "title": "분기 + 루프백 · LR",
+      "diagram": {
+        "type": "flowchart",
+        "direction": "LR",
+        "nodes": [
+          {"id": "a", "title": "이슈 등록", "desc": "@claude 멘션"},
+          {"id": "b", "title": "분석", "desc": "컨텍스트 수집"},
+          {"id": "c", "title": "코드 생성", "desc": "수정안 작성"},
+          {"id": "d", "title": "리뷰", "desc": "다중 에이전트"},
+          {"id": "e", "title": "병합", "desc": "승인 시"},
+          {"id": "f", "title": "수정 반영", "desc": "재작업"}
+        ],
+        "edges": [
+          ["a", "b"], ["b", "c"], ["c", "d"],
+          {"from": "d", "to": "e", "label": "통과"},
+          {"from": "d", "to": "f", "label": "반려"},
+          {"from": "f", "to": "c", "label": "재시도"}
+        ]
+      }
+    },
+    {
+      "layout": "diagram",
+      "title": "분기 + 루프백 · TD",
+      "diagram": {
+        "type": "flowchart",
+        "direction": "TD",
+        "nodes": [
+          {"id": "a", "title": "이슈 등록"},
+          {"id": "b", "title": "분석"},
+          {"id": "c", "title": "코드 생성"},
+          {"id": "d", "title": "리뷰"},
+          {"id": "e", "title": "병합"},
+          {"id": "f", "title": "수정 반영"}
+        ],
+        "edges": [
+          ["a", "b"], ["b", "c"], ["c", "d"],
+          {"from": "d", "to": "e", "label": "통과"},
+          {"from": "d", "to": "f", "label": "반려"},
+          {"from": "f", "to": "c", "label": "재시도"}
+        ]
+      }
+    },
+    {
+      "layout": "diagram",
+      "title": "교차 최소화 (역방향 매핑도 깔끔하게)",
+      "diagram": {
+        "type": "flowchart",
+        "direction": "LR",
+        "nodes": [
+          {"id": "s", "title": "소스"},
+          {"id": "a", "title": "A"}, {"id": "b", "title": "B"}, {"id": "c", "title": "C"},
+          {"id": "x", "title": "X"}, {"id": "y", "title": "Y"}, {"id": "z", "title": "Z"}
+        ],
+        "edges": [
+          ["s", "a"], ["s", "b"], ["s", "c"],
+          ["a", "z"], ["b", "y"], ["c", "x"]
+        ]
+      }
+    }
+  ]
+}

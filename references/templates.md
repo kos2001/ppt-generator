@@ -16,7 +16,7 @@ the safe default.
 | `vibrant` | Purple + coral, colored panels, bold | Startup pitches, marketing, launches, internal hype. Energetic, less formal. |
 | `academic` | Serif (Georgia), muted browns, brick-red accent | Lectures, research talks, reports, anything text-dense and scholarly. |
 | `report` | Black header bar with white title, no divider line, clean white body, page numbers | Formal corporate / internal reports, confidential-style documents. |
-| `samsung` | Black header bar, "SAMSUNG DS" brand marker, Samsung-blue accents, white body, Malgun Gothic | Korean corporate / internal brand decks following the Samsung DS house style. |
+| `samsung` | Black header bar, top-right "Confidential" classification marker, Samsung-blue accents, white body, Malgun Gothic; footer shows only the page number | Korean corporate / internal brand decks following the Samsung DS house style. |
 
 ## Picking a template
 
