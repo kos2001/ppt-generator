@@ -217,7 +217,7 @@ the deck and its slide count intact.
 | `title` | no | Header title text. |
 | `eyebrow` | no | Small label above the title (rendered uppercase). |
 | `subtitle` | no | Optional line under the header. |
-| `footer` | no | Footer text (left of the page number). |
+| `footer` | no | Footer text (left of the page number). Normally **omit it** — the footer should show only the page number. |
 | `slide_no`, `total` | no | Page number values (default: this slide's physical position / deck length). |
 | `page_number` | no | Set `false` to omit the page number (default `true`). |
 

@@ -121,7 +121,8 @@ def main(argv=None):
     ap.add_argument("-o", "--output", required=True, help="output .pptx")
     ap.add_argument("--template", default=DEFAULT_THEME, help="template/theme name")
     ap.add_argument("--eyebrow", help="running label shown in the header bar")
-    ap.add_argument("--footer", help="footer text on each slide")
+    ap.add_argument("--footer", help="footer text on each slide (convention: "
+                                      "leave off; footer shows only the page number)")
     ap.add_argument("--fit", default="contain", choices=("contain", "cover", "stretch"))
     ap.add_argument("--no-numbers", action="store_true", help="hide page numbers")
     args = ap.parse_args(argv)
