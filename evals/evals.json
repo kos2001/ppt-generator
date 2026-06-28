@@ -1,65 +1,217 @@
 {
   "skill_name": "ppt-generator",
-  "notes": "Evals 0-2 cover Mode A (create from scratch) and run anywhere. Evals 3-5 cover Mode B (edit an existing deck) via the PowerPoint-COM path and therefore require Windows + desktop PowerPoint + `pip install pywin32`. Their fixtures are mixed decks (native template slides interleaved with foreign full-bleed image slides); these are NOT bundled (binary, and the repo keeps deck outputs out of version control) — drop your own under evals/fixtures/ as described in evals/fixtures/README.md before running 3-5.",
+  "notes": "Mode A (create) evals run anywhere (build_pptx is python-pptx). Mode B (edit) evals split into a python-pptx path (text/chart/structural/read — also run anywhere) and a PowerPoint-COM path (DRM/full-bleed tidy — needs Windows + desktop PowerPoint + pywin32, and must NOT be parallelized: concurrent COM automation collides). Each eval carries `mode` and `requires_com`. Mode B fixtures are user-supplied mixed/clean decks under evals/fixtures/ (binary, gitignored — see evals/fixtures/README.md). Grade create outputs with evals/grade_create.py, edit outputs with evals/grade_edit.py.",
   "evals": [
     {
       "id": 0,
       "name": "topic-only-pitch",
-      "prompt": "Make me a 10-slide investor pitch deck for a startup called 'RootCellar' — a subscription box that delivers seasonal local produce. Use a punchy, energetic style.",
-      "expected_output": "A valid .pptx of ~10 slides using the vibrant (or similar energetic) template, with a title, problem/solution, metrics or market chart, and a closing slide. Varied layouts, not all bullets.",
-      "files": []
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "Make me a 10-slide investor pitch deck for a startup called 'RootCellar' — a subscription box that delivers seasonal local produce. Use a punchy, energetic style with the vibrant template.",
+      "expected_output": "A valid .pptx of ~10 slides in the vibrant template, with a title, problem/solution, metrics or market chart, and a closing slide. Varied layouts, not all bullets.",
+      "files": [],
+      "assertions": [
+        {"text": "Valid .pptx that opens without error"},
+        {"text": "Slide count is in the 8-12 range (target ~10)"},
+        {"text": "Uses the vibrant template (theme colors/fonts match vibrant, not the samsung default)"},
+        {"text": "Has a clear title slide and a closing slide"},
+        {"text": "Layouts vary across slides — not every slide is a plain bullet list"}
+      ]
     },
     {
       "id": 1,
       "name": "doc-to-deck",
-      "prompt": "Turn these notes into a clean corporate deck:\n\nQ3 engineering update. Shipped the new search backend (40% faster p95 latency). Migrated 3 of 5 services to the new platform. Incident count down from 12 to 4 quarter over quarter. Next quarter: finish migration, launch the public API, hire 2 SREs.",
-      "expected_output": "A valid .pptx in the corporate template that faithfully uses the given facts (40% faster, 12->4 incidents, 3 of 5 migrated) — ideally a metrics or chart slide for the numbers — without inventing data, plus a forward-looking 'next quarter' slide.",
-      "files": []
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "Turn these notes into a clean deck — use the corporate template (not the usual default):\n\nQ3 engineering update. Shipped the new search backend (40% faster p95 latency). Migrated 3 of 5 services to the new platform. Incident count down from 12 to 4 quarter over quarter. Next quarter: finish migration, launch the public API, hire 2 SREs.",
+      "expected_output": "A valid .pptx in the corporate template (an explicitly NAMED template must win over the samsung default) that faithfully uses the given facts (40% faster, 12->4 incidents, 3 of 5 migrated) — ideally a metrics or chart slide — without inventing data, plus a forward-looking 'next quarter' slide.",
+      "files": [],
+      "assertions": [
+        {"text": "Valid .pptx in the corporate template"},
+        {"text": "Preserves the given facts verbatim in intent: 40% faster, 12->4 incidents, 3 of 5 services migrated"},
+        {"text": "Does NOT invent numbers or facts not present in the notes"},
+        {"text": "Includes a forward-looking 'next quarter' slide (finish migration, public API, hire 2 SREs)"}
+      ]
     },
     {
       "id": 2,
-      "name": "restyle-template",
-      "prompt": "I have a deck spec for a research talk on coral reef bleaching. Build it in the academic template, about 8 slides, fairly text-dense since it's for a conference audience. Cover background, methods, findings, and implications.",
-      "expected_output": "A valid .pptx in the academic template (~8 slides) using section dividers and content/bullets layouts appropriate for a dense scholarly talk, with a sensible structure (background -> methods -> findings -> implications).",
-      "files": []
+      "name": "academic-dense",
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "Build a deck for a research talk on coral reef bleaching in the academic template, about 8 slides, fairly text-dense since it's for a conference audience. Cover background, methods, findings, and implications.",
+      "expected_output": "A valid .pptx in the academic template (~8 slides) using section dividers and content/bullets layouts appropriate for a dense scholarly talk, structured background -> methods -> findings -> implications.",
+      "files": [],
+      "assertions": [
+        {"text": "Valid .pptx in the academic template"},
+        {"text": "Slide count is in the 6-10 range (target ~8)"},
+        {"text": "Structure follows background -> methods -> findings -> implications"},
+        {"text": "Uses section dividers and/or content layouts suited to a dense talk"}
+      ]
     },
     {
       "id": 3,
-      "name": "mixed-deck-tidy-preserve-all",
-      "prompt": "이 덱 좀 정돈해 줘 — 콘텐츠 슬라이드 사이에 다른 발표의 전체화면 이미지 슬라이드가 끼어 있어서 템플릿이랑 안 맞고 페이지 번호도 엉켜 있어. 끼어든 이미지들은 회사 DRM이 걸려 있다고 가정해.",
-      "expected_output": "Every full-bleed foreign image slide is fitted into the Samsung content box and given a matching Samsung header bar (via COM, since DRM is assumed), and the whole deck is renumbered 1/N..N/N by physical position. No slides are deleted — the physical count stays 29. Only form is adjusted; no text is rewritten or removed. A thumbnail grid is rendered to confirm the bars line up.",
-      "files": ["evals/fixtures/semiconductor-outlook.orig-29.pptx"],
+      "name": "dark-keynote-product",
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "Make a sleek dark-themed keynote deck (use the dark template) announcing our new AI noise-cancelling headphones 'EchoVoid Pro', about 12 slides. Marketing energy — hero statement, 3 standout features, a spec comparison, pricing, and a call to action.",
+      "expected_output": "A valid .pptx in the dark template (~12 slides) with a hero/title, three feature slides, a comparison (table or columns), pricing, and a closing CTA. Visual, not bullet-heavy.",
+      "files": [],
       "assertions": [
-        {"text": "Physical slide count is unchanged at 29 — no slides were deleted"},
-        {"text": "Every slide carries a sequential page number of the form 'i / 29'"},
-        {"text": "The foreign full-bleed image slides each received a Samsung header bar (were branded, not left bare)"},
-        {"text": "Operated via the PowerPoint COM path (resize_pptx_com.py), consistent with the stated DRM assumption, rather than python-pptx"},
-        {"text": "No slide's body text was rewritten or removed — only form (fit, chrome, numbering) changed"}
+        {"text": "Valid .pptx in the dark template (dark background theme applied)"},
+        {"text": "Slide count is in the 10-14 range (target ~12)"},
+        {"text": "Includes a hero/title slide, ~3 feature slides, a comparison slide, a pricing slide, and a closing CTA"},
+        {"text": "Does not invent specific competitor names or prices that would read as fabricated facts (generic placeholders acceptable)"}
       ]
     },
     {
       "id": 4,
-      "name": "confirm-before-delete",
-      "prompt": "semiconductor-outlook 덱 수정해 줘",
-      "expected_output": "On a vague 'fix it' request, the skill inspects the deck, applies the safe reversible fixes (brand the foreign full-bleed slides, renumber the whole deck), and SURFACES the off-topic foreign slides as a question ('these 17 slides look off-topic — remove them, or keep?') rather than deleting them. Deleting content on a bare '수정' request without confirmation is the specific mistake this case guards against.",
-      "files": ["evals/fixtures/semiconductor-outlook.orig-29.pptx"],
+      "name": "data-heavy-charts",
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "Build a 6-slide market analysis deck (corporate template). Facts to use: total addressable market is $50B growing at 18% CAGR; our share goes from 2% to 8% over three years (2026 2%, 2027 5%, 2028 8%); the competitive field has 5 main players. Include real charts for the growth and share numbers.",
+      "expected_output": "A valid .pptx (~6 slides) that renders native charts (not images) for the TAM growth and the 2%->5%->8% share trajectory, using exactly the given numbers, no fabrication.",
+      "files": [],
       "assertions": [
-        {"text": "Did NOT delete any slides without explicit confirmation — physical count is preserved (or the run paused to ask before any deletion)"},
-        {"text": "Raised the off-topic/foreign slides as a question for the user rather than removing them unilaterally"},
-        {"text": "Still applied the safe reversible fixes (branding and/or renumbering) without waiting — did not freeze on the open question"}
+        {"text": "Valid .pptx with about 6 slides"},
+        {"text": "Contains at least one native chart object (graphicFrame/chart), not a picture of a chart"},
+        {"text": "Share trajectory uses exactly 2%, 5%, 8% for 2026/2027/2028"},
+        {"text": "TAM $50B and 18% CAGR appear and are not altered"},
+        {"text": "TAM values are either the given $50B or projected forward at the given 18% CAGR — no other figures invented"}
       ]
     },
     {
       "id": 5,
+      "name": "diagram-process",
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "우리 신규 입사자 온보딩 프로세스를 다이어그램 한 장으로 그려줘: 서류 제출 → 오리엔테이션 → 멘토 배정 → 1주 집중 교육 → 수습 평가. 네이티브 도형으로(이미지 말고).",
+      "expected_output": "A deck (or slide) with a native process diagram — five connected stages (서류 제출, 오리엔테이션, 멘토 배정, 1주 집중 교육, 수습 평가) drawn as real shapes + connectors/arrows, left-to-right, not a rasterized image.",
+      "files": [],
+      "assertions": [
+        {"text": "Valid .pptx containing a process diagram"},
+        {"text": "All five stages are present in order: 서류 제출, 오리엔테이션, 멘토 배정, 1주 집중 교육, 수습 평가"},
+        {"text": "Diagram is built from native shapes + connectors/arrows, NOT a single embedded image"},
+        {"text": "Stages are laid out left-to-right (process flow)"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "minimal-short",
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "5장짜리 미니멀한 팀 소개 덱 만들어줘 (minimal 템플릿). 군더더기 없이: 표지, 미션 한 줄, 팀원 4명, 지금 하는 일, 연락처.",
+      "expected_output": "A valid .pptx of ~5 slides in the minimal template, restrained and uncluttered: title, one-line mission, a team slide (4 people), a 'what we do now' slide, and a contact slide.",
+      "files": [],
+      "assertions": [
+        {"text": "Valid .pptx in the minimal template"},
+        {"text": "Slide count is 4-6 (target 5)"},
+        {"text": "Covers title, mission, team (4 members), current work, contact"},
+        {"text": "Restrained/uncluttered — does not overpack slides with text"}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "samsung-exec-report-korean",
+      "mode": "A",
+      "requires_com": false,
+      "prompt": "임원 보고용 반기 사업 보고서 슬라이드 만들어줘. 상반기 매출 8,200억(전년比 +12%), 영업이익률 14%, 신규 고객 340곳, 하반기 목표는 매출 1조·신제품 2종 출시. 10장 정도.",
+      "expected_output": "A valid .pptx (~10 slides) in the samsung template (the user's default; not asked) for a Korean executive half-year business report, faithfully using the given figures, with an H2 goals slide.",
+      "files": [],
+      "assertions": [
+        {"text": "Valid .pptx using the samsung template (chosen as default without asking)"},
+        {"text": "Slide count is 8-12 (target ~10)"},
+        {"text": "Faithfully uses the figures: 8,200억 (+12%), 영업이익률 14%, 신규 고객 340곳"},
+        {"text": "Includes an H2 goals slide (매출 1조, 신제품 2종)"},
+        {"text": "Did not ask which template to use (samsung is the standing default)"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "mixed-deck-tidy-preserve-all",
+      "mode": "B",
+      "requires_com": true,
+      "prompt": "이 덱 좀 정돈해 줘 — 콘텐츠 슬라이드 사이에 다른 발표의 전체화면 이미지 슬라이드가 끼어 있어서 템플릿이랑 안 맞고 페이지 번호도 엉켜 있어. 끼어든 이미지들은 회사 DRM이 걸려 있다고 가정해.",
+      "expected_output": "Every full-bleed foreign image slide is fitted into the content box and given a matching Samsung header bar (via COM, since DRM is assumed), and the whole deck is renumbered 1/N..N/N. No slides deleted (count stays 29). Only form changes.",
+      "files": ["evals/fixtures/semiconductor-outlook.orig-29.pptx"],
+      "assertions": [
+        {"text": "Physical slide count is unchanged at 29 — no slides were deleted"},
+        {"text": "Every slide carries a sequential page number of the form 'i / 29'"},
+        {"text": "The foreign full-bleed image slides each received a Samsung header bar"},
+        {"text": "Operated via the PowerPoint COM path (resize_pptx_com.py), consistent with the DRM assumption"},
+        {"text": "No slide's body text was rewritten or removed — only form changed"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "confirm-before-delete",
+      "mode": "B",
+      "requires_com": true,
+      "prompt": "semiconductor-outlook 덱 수정해 줘",
+      "expected_output": "On a vague 'fix it' request, applies the safe reversible fixes (brand foreign slides, renumber) and SURFACES the off-topic foreign slides as a question rather than deleting them. Deleting on a bare '수정' without confirmation is the mistake guarded against.",
+      "files": ["evals/fixtures/semiconductor-outlook.orig-29.pptx"],
+      "assertions": [
+        {"text": "Did NOT delete any slides without explicit confirmation — count preserved (or paused to ask first)"},
+        {"text": "Raised the off-topic/foreign slides as a question rather than removing them"},
+        {"text": "Still applied the safe reversible fixes (branding and/or renumbering) without freezing"}
+      ]
+    },
+    {
+      "id": 10,
       "name": "oversized-page-renumber",
+      "mode": "B",
+      "requires_com": true,
       "prompt": "이 Cowork 덱 전체를 정돈해 줘. 풀블리드 이미지 슬라이드에 헤더가 없고 번호도 안 맞아. 두 주제가 섞여 있어도 그대로 두고, 전체를 1/N~N/N로 다시 매겨 줘.",
-      "expected_output": "On this oversized 16:9 deck (~17.8x10in page), the un-chromed full-bleed image slides get a header bar whose height matches the native slides' bar (chrome geometry scales to page height, ~3.39cm — not a fixed 1-inch bar). Already-fitted/native slides are left untouched. The whole 35-slide deck is renumbered 1/35..35/35. Nothing is deleted.",
+      "expected_output": "On this oversized 16:9 deck (~17.8x10in), un-chromed full-bleed slides get a header bar matching the native bar height (scaled, ~3.39cm). Already-fitted/native slides untouched. Whole 35-slide deck renumbered 1/35..35/35. Nothing deleted.",
       "files": ["evals/fixtures/Claude_Cowork_No-Code_Automation.orig.pptx"],
       "assertions": [
         {"text": "All 35 slides are numbered sequentially as 'i / 35'"},
-        {"text": "Header bars added to the foreign slides match the native bar height (scaled to the oversized page), not a fixed 1-inch/2.54cm bar"},
-        {"text": "Slides that were already fitted/chromed were not disturbed (their picture position/size unchanged)"},
+        {"text": "Header bars added to foreign slides match the native bar height (scaled to the oversized page), not a fixed 1-inch bar"},
+        {"text": "Already-fitted/chromed slides were not disturbed"},
         {"text": "Physical slide count is preserved at 35 — no slides deleted"}
+      ]
+    },
+    {
+      "id": 11,
+      "name": "edit-text-and-chart",
+      "mode": "B",
+      "requires_com": false,
+      "prompt": "evals/fixtures/sample-corporate.pptx 에서 표지 부제목을 'FY2026 상반기 결산'으로 바꾸고, 매출 차트의 2025 값을 700으로 수정해줘. 나머지는 그대로 둬.",
+      "expected_output": "The title slide subtitle becomes 'FY2026 상반기 결산' and the revenue chart's 2025 data point becomes 700, with every other shape, slide, and bit of formatting untouched. Done via python-pptx edit (no COM needed for an ordinary deck).",
+      "files": ["evals/fixtures/sample-corporate.pptx"],
+      "assertions": [
+        {"text": "Title slide subtitle text is now 'FY2026 상반기 결산'"},
+        {"text": "The revenue chart's 2025 value is 700"},
+        {"text": "Slide count is unchanged and no other slide's text was altered"},
+        {"text": "The deck still opens as a valid .pptx with its original template/formatting intact"}
+      ]
+    },
+    {
+      "id": 12,
+      "name": "read-extract",
+      "mode": "B",
+      "requires_com": false,
+      "prompt": "evals/fixtures/sample-corporate.pptx 에서 슬라이드별 제목, 그리고 모든 표와 차트의 데이터를 추출해서 깔끔하게 정리해줘. 덱은 수정하지 말고 읽기만.",
+      "expected_output": "A structured text summary listing each slide's title plus the data behind every table and chart, WITHOUT modifying the source deck (read-only via extract/inspect).",
+      "files": ["evals/fixtures/sample-corporate.pptx"],
+      "assertions": [
+        {"text": "Lists per-slide titles for the deck"},
+        {"text": "Extracts the chart data (series/categories/values), not just that a chart exists"},
+        {"text": "Did NOT modify the source .pptx (read-only)"}
+      ]
+    },
+    {
+      "id": 13,
+      "name": "add-and-reorder",
+      "mode": "B",
+      "requires_com": false,
+      "prompt": "evals/fixtures/sample-corporate.pptx 끝에 'Next Steps' 라는 제목의 슬라이드를 하나 추가하고, 현재 마지막 직전 슬라이드를 2번 위치로 옮겨줘. 기존 슬라이드 내용은 유지.",
+      "expected_output": "A new 'Next Steps' slide is appended, one existing slide is moved to position 2, slide count increases by exactly 1, and existing slide content is preserved.",
+      "files": ["evals/fixtures/sample-corporate.pptx"],
+      "assertions": [
+        {"text": "Slide count increased by exactly 1 versus the input"},
+        {"text": "A slide titled 'Next Steps' exists"},
+        {"text": "The intended slide was moved to position 2"},
+        {"text": "Existing slides' content was preserved (not rewritten)"}
       ]
     }
   ]
