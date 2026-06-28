@@ -47,8 +47,8 @@ Workflow (do these in order):
     # 4) Add the template's header/footer CHROME (works on DRM decks too).
     #    Unlike --template (frame geometry only), --chrome ADDS native shapes:
     #    a header bar, brand marker, and page numbers on every slide.
-    python scripts/resize_pptx_com.py deck.pptx --chrome samsung \
-        --eyebrow "Project" --footer "Confidential"
+    #    Convention: leave --footer off so the footer shows only the page number.
+    python scripts/resize_pptx_com.py deck.pptx --chrome samsung
     #    Typical image-deck flow is two passes: fit the images, then chrome:
     python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
     python scripts/resize_pptx_com.py tmp.pptx  --chrome  samsung --out final.pptx
@@ -641,7 +641,9 @@ def main():
                          "page numbers on every slide via COM (no value = %s)"
                          % DEFAULT_THEME)
     ap.add_argument("--eyebrow", help="--chrome: running label shown in the bar")
-    ap.add_argument("--footer", help="--chrome: footer text on every slide")
+    ap.add_argument("--footer", help="--chrome: footer text on every slide "
+                                     "(convention: leave off; footer shows only "
+                                     "the page number)")
     ap.add_argument("--no-numbers", action="store_true",
                     help="--chrome: do not add page numbers")
     ap.add_argument("--slide", type=int, help="target slide (1-based); default all")
