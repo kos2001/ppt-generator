@@ -206,7 +206,17 @@ file already and wants it changed rather than rebuilt.
 **When the ask is vague ("이 파일 수정해 줘", "fix this deck") — don't ask what
 to change. Inspect first, then act.** A bare "fix it" is an invitation to find
 the problems, not a prompt to interview the user. Run `inspect_pptx.py` (and a
-`thumbnail.py` grid when the issue might be visual) to see the real state. Then
+`thumbnail.py` grid when the issue might be visual) to see the real state.
+
+**First, always confirm the *actual physical slide count*** — the number of
+slides `inspect_pptx.py` reports — and compare it to what the footer page numbers
+claim (e.g. a "N / 12" stamp). They diverge often: image-only slides exported
+from another tool get inserted *between* content slides, so a deck whose footers
+read "/ 12" may physically hold 29 slides. Treat the physical count from
+`inspect_pptx.py` as ground truth — it drives `renumber_pages` (which restamps
+each slide as physical `position / total`), tells you whether foreign image
+slides snuck in, and prevents off-by-N edits when you address shapes by slide
+index. Note the real total in your first report. Then
 sort what you find into two buckets — and treat them differently:
 
 - **Safe, reversible fixes → just do them, now.** These only adjust *form*, never
@@ -321,8 +331,59 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
       --no-numbers --footer "Confidential" --out final.pptx
   ```
 
-  Chrome geometry assumes a ~13.3×7.5in (16:9) slide; on much larger page setups
-  the bar/margins render proportionally smaller (still correctly anchored).
+  Chrome geometry scales with the deck's page height (relative to a 7.5in-tall
+  16:9 baseline), so the bar, brand marker, and page number match natively-built
+  chrome at any page size — including oversized 16:9 decks (e.g. 17.8×10in). When
+  fitting full-bleed images on such a deck, match the box to the slides that are
+  already fitted (measure one with `--list`) rather than the default template box,
+  so all content slides line up; `--slides LIST` also restricts `--template`/resize
+  to just the full-bleed slides without disturbing already-fitted ones.
+
+  `--renumber [NAME]` — **renumber the whole deck `1/N .. N/N`** by physical
+  position via COM. **This is the standard final step after ANY edit** (add /
+  delete / tidy / mixed-deck branding): always leave the deck numbered
+  sequentially over its real total — never leave a stale logical count like
+  "n / 12" on a deck that now physically holds 29 slides, and don't leave image
+  slides unnumbered. It updates an existing `N / M` page-number textbox in place
+  (native slides) and adds one bottom-right where none exists (title, closing,
+  freshly-chromed image slides). Prefer this over `--no-numbers`: rather than
+  matching a skip-scheme, unify the entire deck.
+
+  **The mixed-deck tidy recipe (three `--out` passes).** This is the workflow
+  that comes up most: a deck that is mostly native template slides with a band of
+  foreign full-bleed image slides dropped in, footers reading a stale count.
+  First classify — which slides are full-bleed images with no chrome (these need
+  fit + chrome) versus already-fitted/native ones (leave untouched). `--list`
+  shows picture sizes: a picture filling the whole slide is full-bleed; one inset
+  at an offset is already fitted. Then fit **only** the full-bleed slides, chrome
+  **only** the same set (no numbers yet), and renumber the whole deck last:
+
+  ```bash
+  # full-bleed slides here are 1-3,13-24,34-35; fit them into the SAME box the
+  # already-fitted slides use (measure one with --list) so all content lines up
+  python scripts/resize_pptx_com.py deck.pptx --slides 1-3,13-24,34-35 \
+      --box 34.6x19.3 --left 5.27 --top 3.89 --out a.pptx
+  python scripts/resize_pptx_com.py a.pptx --chrome samsung --slides 1-3,13-24,34-35 \
+      --no-numbers --out b.pptx
+  python scripts/resize_pptx_com.py b.pptx --renumber samsung --out final.pptx
+  ```
+
+  On a deck with no already-fitted slides to match, `--template samsung` (which
+  reserves the header area automatically) is fine for the fit pass instead of an
+  explicit `--box`. Always render a `thumbnail.py` grid of the result and confirm
+  the new bars line up with the native ones before promoting it over the target.
+
+  `--delete-slides LIST` — **delete slides** (e.g. `10-16,18-27`, 1-based) via
+  COM, the DRM-safe counterpart to `edit_pptx.py`'s `delete_slide`. **Deleting is
+  destructive — confirm with the user first** (see the Mode B buckets above); a
+  "수정/fix" request is *not* a delete request. Deletes in descending order so
+  indices don't shift mid-pass; renumber afterward.
+
+  **COM save hazard:** a lingering `POWERPNT.EXE` that still holds the file open
+  can silently re-save the pre-edit version over your output. After a COM save,
+  verify the on-disk slide count (`zipfile` namelist) and check
+  `tasklist | grep -i powerpnt` for zombies; prefer `--out` chains over repeated
+  in-place saves.
 
   Some strict DRM products allow manual editing but block automation/COM
   specifically — then `--check` fails at `Open()`. That block is intended; stop

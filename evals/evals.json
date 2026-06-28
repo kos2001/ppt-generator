@@ -1,5 +1,6 @@
 {
   "skill_name": "ppt-generator",
+  "notes": "Evals 0-2 cover Mode A (create from scratch) and run anywhere. Evals 3-5 cover Mode B (edit an existing deck) via the PowerPoint-COM path and therefore require Windows + desktop PowerPoint + `pip install pywin32`. Their fixtures are mixed decks (native template slides interleaved with foreign full-bleed image slides); these are NOT bundled (binary, and the repo keeps deck outputs out of version control) — drop your own under evals/fixtures/ as described in evals/fixtures/README.md before running 3-5.",
   "evals": [
     {
       "id": 0,
@@ -21,6 +22,45 @@
       "prompt": "I have a deck spec for a research talk on coral reef bleaching. Build it in the academic template, about 8 slides, fairly text-dense since it's for a conference audience. Cover background, methods, findings, and implications.",
       "expected_output": "A valid .pptx in the academic template (~8 slides) using section dividers and content/bullets layouts appropriate for a dense scholarly talk, with a sensible structure (background -> methods -> findings -> implications).",
       "files": []
+    },
+    {
+      "id": 3,
+      "name": "mixed-deck-tidy-preserve-all",
+      "prompt": "이 덱 좀 정돈해 줘 — 콘텐츠 슬라이드 사이에 다른 발표의 전체화면 이미지 슬라이드가 끼어 있어서 템플릿이랑 안 맞고 페이지 번호도 엉켜 있어. 끼어든 이미지들은 회사 DRM이 걸려 있다고 가정해.",
+      "expected_output": "Every full-bleed foreign image slide is fitted into the Samsung content box and given a matching Samsung header bar (via COM, since DRM is assumed), and the whole deck is renumbered 1/N..N/N by physical position. No slides are deleted — the physical count stays 29. Only form is adjusted; no text is rewritten or removed. A thumbnail grid is rendered to confirm the bars line up.",
+      "files": ["evals/fixtures/semiconductor-outlook.orig-29.pptx"],
+      "assertions": [
+        {"text": "Physical slide count is unchanged at 29 — no slides were deleted"},
+        {"text": "Every slide carries a sequential page number of the form 'i / 29'"},
+        {"text": "The foreign full-bleed image slides each received a Samsung header bar (were branded, not left bare)"},
+        {"text": "Operated via the PowerPoint COM path (resize_pptx_com.py), consistent with the stated DRM assumption, rather than python-pptx"},
+        {"text": "No slide's body text was rewritten or removed — only form (fit, chrome, numbering) changed"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "confirm-before-delete",
+      "prompt": "semiconductor-outlook 덱 수정해 줘",
+      "expected_output": "On a vague 'fix it' request, the skill inspects the deck, applies the safe reversible fixes (brand the foreign full-bleed slides, renumber the whole deck), and SURFACES the off-topic foreign slides as a question ('these 17 slides look off-topic — remove them, or keep?') rather than deleting them. Deleting content on a bare '수정' request without confirmation is the specific mistake this case guards against.",
+      "files": ["evals/fixtures/semiconductor-outlook.orig-29.pptx"],
+      "assertions": [
+        {"text": "Did NOT delete any slides without explicit confirmation — physical count is preserved (or the run paused to ask before any deletion)"},
+        {"text": "Raised the off-topic/foreign slides as a question for the user rather than removing them unilaterally"},
+        {"text": "Still applied the safe reversible fixes (branding and/or renumbering) without waiting — did not freeze on the open question"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "oversized-page-renumber",
+      "prompt": "이 Cowork 덱 전체를 정돈해 줘. 풀블리드 이미지 슬라이드에 헤더가 없고 번호도 안 맞아. 두 주제가 섞여 있어도 그대로 두고, 전체를 1/N~N/N로 다시 매겨 줘.",
+      "expected_output": "On this oversized 16:9 deck (~17.8x10in page), the un-chromed full-bleed image slides get a header bar whose height matches the native slides' bar (chrome geometry scales to page height, ~3.39cm — not a fixed 1-inch bar). Already-fitted/native slides are left untouched. The whole 35-slide deck is renumbered 1/35..35/35. Nothing is deleted.",
+      "files": ["evals/fixtures/Claude_Cowork_No-Code_Automation.orig.pptx"],
+      "assertions": [
+        {"text": "All 35 slides are numbered sequentially as 'i / 35'"},
+        {"text": "Header bars added to the foreign slides match the native bar height (scaled to the oversized page), not a fixed 1-inch/2.54cm bar"},
+        {"text": "Slides that were already fitted/chromed were not disturbed (their picture position/size unchanged)"},
+        {"text": "Physical slide count is preserved at 35 — no slides deleted"}
+      ]
     }
   ]
 }
