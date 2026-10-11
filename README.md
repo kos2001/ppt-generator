@@ -25,6 +25,7 @@ local: no server, no API, native `.pptx` via [python-pptx](https://python-pptx.r
 ## Requirements
 
 ```bash
+python3 -m venv .venv && source .venv/bin/activate   # optional
 pip install python-pptx Pillow
 ```
 
@@ -52,6 +53,30 @@ Minimal spec:
   ]
 }
 ```
+
+## Screens
+
+All slides below were rendered from `assets/spec.example.json` (plus one
+`diagram` slide) and exported from the generated `.pptx` without manual edits.
+
+<table>
+<tr>
+<td><img src="docs/img/corporate-metrics.png" alt="corporate template, metrics layout" width="100%"></td>
+<td><img src="docs/img/dark-chart.png" alt="dark template, chart layout" width="100%"></td>
+</tr>
+<tr>
+<td><code>corporate</code> template, <code>metrics</code> layout</td>
+<td><code>dark</code> template, <code>chart</code> layout (native, editable chart)</td>
+</tr>
+<tr>
+<td><img src="docs/img/vibrant-comparison.png" alt="vibrant template, comparison layout" width="100%"></td>
+<td><img src="docs/img/minimal-diagram.png" alt="minimal template, process diagram layout" width="100%"></td>
+</tr>
+<tr>
+<td><code>vibrant</code> template, <code>comparison</code> layout</td>
+<td><code>minimal</code> template, <code>diagram</code> layout (<code>process</code>, native shapes)</td>
+</tr>
+</table>
 
 ## Repository layout
 
