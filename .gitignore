@@ -24,3 +24,7 @@ decks/
 
 # Eval fixtures are binary mixed decks supplied locally (see evals/fixtures/README.md)
 evals/fixtures/*.pptx
+
+# Local virtualenv and ad-hoc renders
+.venv/
+/*.pptx
