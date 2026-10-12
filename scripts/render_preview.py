@@ -86,6 +86,56 @@ def _seed_fonts(profile, extra_dirs):
     return n
 
 
+# Fonts the templates name that are often missing on the preview machine,
+# mapped to installed look-alikes (first one found wins). Without this,
+# LibreOffice may fall back to a serif for the Latin text of Malgun Gothic runs.
+_SUBSTITUTES = {
+    "Malgun Gothic": ["Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR",
+                      "NanumGothic", "Pretendard"],
+    "맑은 고딕": ["Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR",
+               "NanumGothic", "Pretendard"],
+    "Calibri": ["Carlito"],
+}
+
+
+def _installed_families(profile):
+    names = set()
+    for f in os.listdir(os.path.join(profile, "user", "fonts")):
+        names.add(re.sub(r"[^a-z]", "", f.lower()))
+    return names
+
+
+def _write_substitutions(profile):
+    have = _installed_families(profile)
+    pairs = []
+    for src, cands in _SUBSTITUTES.items():
+        for c in cands:
+            key = re.sub(r"[^a-z]", "", c.lower())
+            if any(n.startswith(key) for n in have):
+                pairs.append((src, c))
+                break
+    if not pairs:
+        return
+    nodes = "".join(
+        '<item oor:path="/org.openoffice.Office.Common/Font/Substitution/FontPairs">'
+        '<node oor:name="_%d" oor:op="replace">'
+        '<prop oor:name="Always" oor:op="fuse"><value>true</value></prop>'
+        '<prop oor:name="OnScreenOnly" oor:op="fuse"><value>false</value></prop>'
+        '<prop oor:name="ReplaceFont" oor:op="fuse"><value>%s</value></prop>'
+        '<prop oor:name="SubstituteFont" oor:op="fuse"><value>%s</value></prop>'
+        '</node></item>' % (i, a, b) for i, (a, b) in enumerate(pairs))
+    xcu = ('<?xml version="1.0" encoding="UTF-8"?>'
+           '<oor:items xmlns:oor="http://openoffice.org/2001/registry" '
+           'xmlns:xs="http://www.w3.org/2001/XMLSchema" '
+           'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+           '<item oor:path="/org.openoffice.Office.Common/Font/Substitution">'
+           '<prop oor:name="Replacement" oor:op="fuse"><value>true</value></prop></item>'
+           + nodes + '</oor:items>')
+    with open(os.path.join(profile, "user", "registrymodifications.xcu"), "w",
+              encoding="utf-8") as f:
+        f.write(xcu)
+
+
 def to_pdf(pptx, out_dir, font_dirs=()):
     soffice = find_soffice()
     if not soffice:
@@ -96,6 +146,7 @@ def to_pdf(pptx, out_dir, font_dirs=()):
     # with first-run dialogs.
     profile = tempfile.mkdtemp(prefix="lo_profile_")
     _seed_fonts(profile, font_dirs)
+    _write_substitutions(profile)
     try:
         subprocess.run(
             [soffice, "-env:UserInstallation=file://" + profile, "--headless",

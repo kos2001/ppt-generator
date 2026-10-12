@@ -120,6 +120,28 @@ THEMES = {
         "header_style": "bar",
         "header_label": "Confidential",  # white label at the right of the header bar; "" to disable
     },
+    # Samsung DS house style: black header bar, a thin Samsung-blue rule under
+    # it, blue accents on a clean white body. Korean corporate/internal decks.
+    "samsung": {
+        "label": "Samsung DS",
+        "description": "Black header bar with a Samsung-blue rule, blue accents, white body, Malgun Gothic. Korean corporate/internal brand decks.",
+        "background": "FFFFFF",
+        "surface": "F4F5F7",       # light card / panel fill (matches PII cards)
+        "primary": "111111",       # near-black header bar, section bg, table header
+        "secondary": "1428A0",     # Samsung blue — eyebrows, sublabels, subtitle
+        "accent": "1428A0",        # Samsung blue — metric values, accent blocks, charts
+        "text": "1A1A1A",
+        "text_muted": "6A6E76",    # 4.7:1 on the F4F5F7 cards (WCAG AA)
+        "on_primary": "FFFFFF",
+        "heading_font": "Malgun Gothic",
+        "body_font": "Malgun Gothic",
+        "title_pt": 40,
+        "heading_pt": 26,
+        "body_pt": 18,
+        "header_style": "bar",
+        "header_label": "Confidential",  # top-right classification marker on every slide
+        "show_footer_text": False,       # footer shows only the page number (no footer text)
+    },
     # Serif, muted, dense — lectures, research, reports.
     "academic": {
         "label": "Academic",
@@ -140,7 +162,7 @@ THEMES = {
     },
 }
 
-DEFAULT_THEME = "corporate"
+DEFAULT_THEME = "samsung"
 
 # East Asian typeface written into every run's <a:ea> (Hangul/CJK glyphs come
 # from this font, not from heading_font/body_font). Malgun Gothic ships with
@@ -157,6 +179,29 @@ def get_theme(name):
     produces a deck (with a warning printed by the caller).
     """
     return THEMES.get((name or "").strip().lower(), THEMES[DEFAULT_THEME])
+
+
+def body_box(theme_or_name, slide_w_in=13.333, slide_h_in=7.5):
+    """The content/image region of a slide for a theme, in inches:
+    ``(left, top, width, height)``.
+
+    This is the box an image should fill to land *inside* the template's
+    chrome — under the header bar and above the footer / page-number band.
+    Bar headers are ~1.0" tall, so content starts lower; lighter accent
+    headers let it start higher. The box adapts to the slide's actual size,
+    so it stays correct for 16:9, 4:3, or any custom page setup.
+
+    Single source of truth shared by the renderer, the edit path
+    (edit_pptx.py `fit_image`/`add_image` with `template`), the COM resizer
+    (resize_pptx_com.py `--template`), and wrap_images.py.
+    """
+    theme = (theme_or_name if isinstance(theme_or_name, dict)
+             else get_theme(theme_or_name))
+    top = 1.15 if theme.get("header_style") == "bar" else 1.6
+    left = 0.4
+    width = slide_w_in - 2 * left
+    height = slide_h_in - top - 0.65  # leave room for footer / page number
+    return left, top, width, height
 
 
 def theme_names():
