@@ -24,11 +24,28 @@
       "eyebrow": "Performance",
       "subtitle": "A strong close to the year across every headline metric.",
       "metrics": [
-        {"value": "$4.2M", "label": "Revenue", "sublabel": "+18% YoY"},
-        {"value": "1,240", "label": "New Customers", "sublabel": "+9% QoQ"},
-        {"value": "94%", "label": "Retention", "sublabel": "Best on record"},
-        {"value": "31", "label": "NPS", "sublabel": "+6 points"}
-      ]
+        {
+          "value": "$4.2M",
+          "label": "Revenue",
+          "sublabel": "+18% YoY"
+        },
+        {
+          "value": "1,240",
+          "label": "New Customers",
+          "sublabel": "+9% QoQ"
+        },
+        {
+          "value": "94%",
+          "label": "Retention",
+          "sublabel": "Best on record"
+        },
+        {
+          "value": "31",
+          "label": "NPS",
+          "sublabel": "+6 points"
+        }
+      ],
+      "notes": "Open with the revenue number; retention is the story behind it."
     },
     {
       "layout": "bullets",
@@ -36,12 +53,28 @@
       "eyebrow": "Analysis",
       "subtitle": "Three factors explain most of the upside.",
       "bullets": [
-        {"text": "Enterprise above plan", "bold": true},
-        {"text": "Contract value +22%", "level": 1},
-        {"text": "Two flagship logos in November", "level": 1},
-        {"text": "Self-serve conversion up", "bold": true},
-        {"text": "Onboarding: time-to-value halved", "level": 1}
-      ]
+        {
+          "text": "Enterprise above plan",
+          "bold": true
+        },
+        {
+          "text": "Contract value +22%",
+          "level": 1
+        },
+        {
+          "text": "Two flagship logos in November",
+          "level": 1
+        },
+        {
+          "text": "Self-serve conversion up",
+          "bold": true
+        },
+        {
+          "text": "Onboarding: time-to-value halved",
+          "level": 1
+        }
+      ],
+      "notes": "Enterprise: two flagship logos closed in November. Self-serve: new onboarding halved time-to-value."
     },
     {
       "layout": "chart",
@@ -49,12 +82,34 @@
       "eyebrow": "Trend",
       "chart": {
         "type": "column",
-        "categories": ["Q1", "Q2", "Q3", "Q4"],
-        "series": [
-          {"name": "2024", "values": [2.8, 3.0, 3.3, 3.6]},
-          {"name": "2025", "values": [3.4, 3.7, 3.9, 4.2]}
+        "categories": [
+          "Q1",
+          "Q2",
+          "Q3",
+          "Q4"
         ],
-        "data_labels": false
+        "series": [
+          {
+            "name": "2024",
+            "values": [
+              2.8,
+              3.0,
+              3.3,
+              3.6
+            ]
+          },
+          {
+            "name": "2025",
+            "values": [
+              3.4,
+              3.7,
+              3.9,
+              4.2
+            ]
+          }
+        ],
+        "data_labels": false,
+        "number_format": "\"$\"0.0\"M\""
       }
     },
     {
@@ -62,11 +117,19 @@
       "title": "Wins and Watch-outs",
       "left": {
         "heading": "Wins",
-        "bullets": ["Tighter ICP targeting", "Faster sales cycle", "Higher expansion revenue"]
+        "bullets": [
+          "Tighter ICP targeting",
+          "Faster sales cycle",
+          "Higher expansion revenue"
+        ]
       },
       "right": {
         "heading": "Watch-outs",
-        "bullets": ["Rising support load", "Infra cost per customer", "EMEA hiring lag"]
+        "bullets": [
+          "Rising support load",
+          "Infra cost per customer",
+          "EMEA hiring lag"
+        ]
       }
     },
     {
@@ -74,25 +137,83 @@
       "title": "Old Plan vs. New Plan",
       "left": {
         "heading": "Original 2026 Plan",
-        "bullets": ["Flat headcount", "Single-region focus", "Conservative targets"]
+        "bullets": [
+          "Flat headcount",
+          "Single-region focus",
+          "Conservative targets"
+        ]
       },
       "right": {
         "heading": "Revised 2026 Plan",
-        "bullets": ["EMEA team investment", "Two new regions", "Stretch revenue goal"]
+        "bullets": [
+          "EMEA team investment",
+          "Two new regions",
+          "Stretch revenue goal"
+        ]
       }
     },
     {
       "layout": "table",
       "title": "Top Accounts",
       "table": {
-        "header": ["Account", "ARR", "Status", "Owner"],
+        "header": [
+          "Account",
+          "ARR",
+          "Status",
+          "Owner"
+        ],
         "rows": [
-          ["Globex", "$640K", "Renewed", "Priya"],
-          ["Initech", "$410K", "Expansion", "Marco"],
-          ["Umbrella", "$380K", "At risk", "Dana"],
-          ["Soylent", "$295K", "New", "Priya"]
+          [
+            "Globex",
+            "$640K",
+            "Renewed",
+            "Priya"
+          ],
+          [
+            "Initech",
+            "$410K",
+            "Expansion",
+            "Marco"
+          ],
+          [
+            "Umbrella",
+            "$380K",
+            "At risk",
+            "Dana"
+          ],
+          [
+            "Soylent",
+            "$295K",
+            "New",
+            "Priya"
+          ]
         ]
       }
+    },
+    {
+      "layout": "chart",
+      "title": "Q4 Revenue by Region",
+      "eyebrow": "Mix",
+      "subtitle": "North America carried the quarter.",
+      "chart": {
+        "type": "bar",
+        "categories": [
+          "North America",
+          "EMEA",
+          "APAC",
+          "LATAM"
+        ],
+        "series": [
+          2.3,
+          1.1,
+          0.6,
+          0.2
+        ],
+        "series_name": "Revenue",
+        "highlight": "North America",
+        "number_format": "\"$\"0.0\"M\""
+      },
+      "notes": "Highlight NA; EMEA flat; APAC is the growth bet for next year."
     },
     {
       "layout": "quote",
@@ -100,15 +221,34 @@
       "attribution": "Head of Customer Success"
     },
     {
-      "layout": "bullets",
+      "layout": "cards",
       "title": "The Year Ahead",
       "eyebrow": "Outlook",
       "subtitle": "Convert this momentum into durable, repeatable growth.",
-      "bullets": [
-        {"text": "Enterprise expansion as the primary engine", "bold": true},
-        {"text": "Continued self-serve funnel investment", "bold": true},
-        {"text": "Data-led focus, not one-off wins", "bold": true}
-      ]
+      "cards": [
+        {
+          "title": "Enterprise",
+          "bullets": [
+            "Primary growth engine",
+            "Expansion over new logos"
+          ]
+        },
+        {
+          "title": "Self-serve",
+          "bullets": [
+            "Continued funnel investment",
+            "Onboarding gains compounding"
+          ]
+        },
+        {
+          "title": "Data-led focus",
+          "bullets": [
+            "Repeatable motions",
+            "Not one-off wins"
+          ]
+        }
+      ],
+      "notes": "Three priorities for next year; each maps to a driver from the results section."
     },
     {
       "layout": "closing",

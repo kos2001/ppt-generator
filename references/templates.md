@@ -5,12 +5,13 @@ applied uniformly across all layouts. Set it once via the spec's top-level
 `template` field; every slide restyles automatically. The same content can be
 re-rendered in any template by changing that one field.
 
-Choose by audience and tone, not personal taste. When unsure, `corporate` is
-the safe default.
+The renderer default is `samsung` (this skill's standing default — see
+SKILL.md). When the user names a template, use exactly that one; among the
+generic looks, `corporate` is the safe choice for business decks.
 
 | Template | Look | Best for |
 |----------|------|----------|
-| `corporate` | Navy + warm orange on white, sans-serif | Business reviews, sales, exec updates, board decks. The safe default. |
+| `corporate` | Navy + warm orange on white, sans-serif | Business reviews, sales, exec updates, board decks. The safe generic choice. |
 | `minimal` | Black on white, lots of whitespace, thin accents | Design-conscious audiences, product/portfolio, when content should dominate. |
 | `dark` | Dark slate background, mint accent, high contrast | Tech/product keynotes, demos, engineering talks, on-stage in a dark room. |
 | `vibrant` | Purple + coral, colored panels, bold | Startup pitches, marketing, launches, internal hype. Energetic, less formal. |
@@ -30,7 +31,10 @@ the safe default.
 
 Templates name common fonts (Calibri, Helvetica Neue, Arial, Verdana, Georgia).
 PowerPoint substitutes a near-match if a font isn't installed on the viewer's
-machine, so decks stay portable. To match a specific brand, edit the
+machine, so decks stay portable. Korean/CJK characters use the separate East
+Asian font (`ea_font`, default Malgun Gothic), which the renderer writes into
+every run and into the deck's theme fonts — so text the user adds later in
+PowerPoint matches too. To match a specific brand, edit the
 `heading_font` / `body_font` values in `scripts/templates.py`.
 
 ## Adding or customizing a template
@@ -47,3 +51,18 @@ theme, copy an existing entry, rename the key, and adjust:
 
 Keep every key present; the renderer reads the full set. Pick one accent color
 and use it sparingly — restraint is what makes a custom theme look designed.
+
+Optional keys:
+- `bleed` / `on_bleed` — fill and text for full-bleed `section` / `closing`
+  slides (default `primary` / `on_primary`; `dark` keeps them dark)
+- `on_accent` — text on accent-filled headers (e.g. comparison's right card)
+- `chart_colors` — series palette (default: primary, accent, secondary, …)
+- `grid` — chart gridline color; `muted_fill` — non-highlighted bars
+- `ea_font` — East Asian (Korean/CJK) font; default Malgun Gothic
+
+## Contrast
+
+The validator checks every theme against WCAG contrast: 4.5:1 for body text
+(text, muted text, text on cards, text on primary fills) and 3:1 for large
+headings (title color, heading on accent). All bundled templates pass. When
+you add or edit a theme, run the validator and darken any color it flags.

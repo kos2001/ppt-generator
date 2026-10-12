@@ -28,3 +28,8 @@ evals/fixtures/*.pptx
 # Local virtualenv and ad-hoc renders
 .venv/
 /*.pptx
+
+# render_preview.py output (LibreOffice previews) and local Claude docs/state
+*_preview/
+claudedocs/
+.claude/

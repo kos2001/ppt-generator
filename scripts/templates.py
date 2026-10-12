@@ -10,7 +10,10 @@ appear in PowerPoint; if a font is not installed on the viewer's machine,
 PowerPoint substitutes a close match, so prefer widely available families.
 
 To add a new template, copy an existing entry and adjust the values. Keep every
-key present — the renderer expects the full set.
+key present — the renderer expects the full set. Optional keys: `bleed` /
+`on_bleed` (full-bleed section & closing fill, default primary/on_primary),
+`on_accent`, `chart_colors` (series palette), `grid` (chart gridlines),
+`muted_fill` (non-highlighted bars), `ea_font` (East Asian typeface).
 """
 
 THEMES = {
@@ -24,8 +27,9 @@ THEMES = {
         "secondary": "2E75B6",     # mid blue — accents, sublabels
         "accent": "E8833A",        # warm orange — highlights, metric values
         "text": "21262E",          # near-black body text
-        "text_muted": "6B7785",    # captions, footers
+        "text_muted": "5F6B78",    # captions, footers (4.5:1 on surface)
         "on_primary": "FFFFFF",    # text drawn on top of primary fills
+        "on_accent": "21262E",     # white on the orange accent is only 2.7:1
         "heading_font": "Calibri",
         "body_font": "Calibri",
         "title_pt": 40,
@@ -41,8 +45,9 @@ THEMES = {
         "primary": "111111",
         "secondary": "555555",
         "accent": "111111",
+        "chart_colors": ["111111", "8A8A8A", "C4C4C4", "555555"],
         "text": "1A1A1A",
-        "text_muted": "8A8A8A",
+        "text_muted": "6B6B6B",
         "on_primary": "FFFFFF",
         "heading_font": "Helvetica Neue",
         "body_font": "Helvetica Neue",
@@ -62,6 +67,14 @@ THEMES = {
         "text": "E6EAEE",
         "text_muted": "8A97A4",
         "on_primary": "0F1419",
+        # Full-bleed section/closing slides stay dark instead of flipping to
+        # the white `primary`.
+        "bleed": "17202A",
+        "on_bleed": "FFFFFF",
+        "on_accent": "0F1419",
+        "grid": "2A3440",
+        "muted_fill": "4A5663",
+        "chart_colors": ["3DDC97", "9AA7B4", "5AA9E6", "F2C14E", "E6EAEE"],
         "heading_font": "Arial",
         "body_font": "Arial",
         "title_pt": 42,
@@ -78,7 +91,7 @@ THEMES = {
         "secondary": "9C27B0",
         "accent": "FF5252",        # coral red
         "text": "2A2233",
-        "text_muted": "7A7287",
+        "text_muted": "6A6277",
         "on_primary": "FFFFFF",
         "heading_font": "Verdana",
         "body_font": "Verdana",
@@ -97,7 +110,7 @@ THEMES = {
         "secondary": "595959",     # grey — eyebrows, sublabels
         "accent": "2F5597",        # corporate blue — metric values, charts (not a header line)
         "text": "1A1A1A",
-        "text_muted": "7F7F7F",
+        "text_muted": "666666",
         "on_primary": "FFFFFF",
         "heading_font": "Calibri",
         "body_font": "Calibri",
@@ -118,7 +131,7 @@ THEMES = {
         "secondary": "1428A0",     # Samsung blue — eyebrows, sublabels, subtitle
         "accent": "1428A0",        # Samsung blue — metric values, accent blocks, charts
         "text": "1A1A1A",
-        "text_muted": "70747C",
+        "text_muted": "6A6E76",    # 4.7:1 on the F4F5F7 cards (WCAG AA)
         "on_primary": "FFFFFF",
         "heading_font": "Malgun Gothic",
         "body_font": "Malgun Gothic",
@@ -139,7 +152,7 @@ THEMES = {
         "secondary": "7A6A52",
         "accent": "8C2F23",        # brick red
         "text": "2B2620",
-        "text_muted": "726B5E",
+        "text_muted": "655E52",
         "on_primary": "FBFAF7",
         "heading_font": "Georgia",
         "body_font": "Georgia",
@@ -150,6 +163,13 @@ THEMES = {
 }
 
 DEFAULT_THEME = "samsung"
+
+# East Asian typeface written into every run's <a:ea> (Hangul/CJK glyphs come
+# from this font, not from heading_font/body_font). Malgun Gothic ships with
+# Windows and Office; macOS substitutes Apple SD Gothic Neo when it is absent.
+# Override per theme with an "ea_font" key or per deck with the spec's
+# top-level "ea_font".
+DEFAULT_EA_FONT = "Malgun Gothic"
 
 
 def get_theme(name):
