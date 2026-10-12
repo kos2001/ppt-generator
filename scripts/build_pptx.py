@@ -68,6 +68,16 @@ def _rgb(hexstr):
     return RGBColor.from_string(hexstr)
 
 
+def _contrast(a, b):
+    """WCAG contrast ratio of two hex colors."""
+    def lum(h):
+        c = [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+        c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    la, lb = lum(a), lum(b)
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+
 def _pt(emu):
     return float(emu) / textfit.EMU_PER_PT
 
@@ -533,9 +543,14 @@ def layout_section(slide, theme, s):
     # Full-bleed divider slide.
     add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill_hex=theme.get("bleed", theme["primary"]))
     if s.get("number"):
+        # The accent can vanish on a dark bleed (samsung: blue on black is
+        # 1.7:1); fall back to the bleed's text color below 3:1.
+        bleed = theme.get("bleed", theme["primary"])
+        num_color = (theme["accent"] if _contrast(theme["accent"], bleed) >= 3.0
+                     else theme.get("on_bleed", theme["on_primary"]))
         add_text(slide, str(s["number"]), Inches(1.1), Inches(1.6),
                  Inches(4.0), Inches(1.5),
-                 font=theme["heading_font"], size=90, color=theme["accent"],
+                 font=theme["heading_font"], size=90, color=num_color,
                  bold=True, fit=False)
     add_text(slide, s.get("title", ""), Inches(1.1), Inches(3.4),
              SLIDE_W - Inches(2.2), Inches(1.6),
@@ -736,10 +751,11 @@ def _image_dims(path):
 
 
 def _place_image(slide, path, box_left, box_top, box_w, box_h, cover=False,
-                 valign="middle"):
+                 valign="middle", alt=None):
     """Place an image inside the given box, centered. `cover` fills the box
     and crops the overflow (for full-bleed); otherwise it is fitted (contain).
-    The image is never stretched."""
+    The image is never stretched. `alt` becomes the picture's alt text
+    (python-pptx would otherwise store the bare file name)."""
     dims = _image_dims(path)
     if not dims:
         # Missing/unreadable image: draw a labeled placeholder instead of crashing.
@@ -752,6 +768,7 @@ def _place_image(slide, path, box_left, box_top, box_w, box_h, cover=False,
     if cover:
         pic = slide.shapes.add_picture(path, int(box_left), int(box_top),
                                        width=int(box_w), height=int(box_h))
+        _set_alt(pic, alt)
         box_ratio, img_ratio = box_w / box_h, iw / ih
         if img_ratio > box_ratio:      # too wide: crop left/right
             excess = 1 - box_ratio / img_ratio
@@ -765,7 +782,12 @@ def _place_image(slide, path, box_left, box_top, box_w, box_h, cover=False,
     h = int(ih * scale)
     left = int(box_left + (box_w - w) / 2)
     top = int(box_top + ((box_h - h) / 2 if valign == "middle" else 0))
-    slide.shapes.add_picture(path, left, top, width=w, height=h)
+    _set_alt(slide.shapes.add_picture(path, left, top, width=w, height=h), alt)
+
+
+def _set_alt(pic, alt):
+    if alt:
+        pic._element.nvPicPr.cNvPr.set("descr", alt)
 
 
 def layout_image(slide, theme, s):
@@ -775,7 +797,8 @@ def layout_image(slide, theme, s):
     img = s.get("image")
     if pos == "full":
         if img:
-            _place_image(slide, img, 0, 0, SLIDE_W, SLIDE_H, cover=True)
+            _place_image(slide, img, 0, 0, SLIDE_W, SLIDE_H, cover=True,
+                         alt=s.get("alt") or s.get("title"))
         if s.get("title"):
             add_rect(slide, 0, SLIDE_H - Inches(1.3), SLIDE_W, Inches(1.3),
                      fill_hex=theme["primary"])
@@ -796,7 +819,8 @@ def layout_image(slide, theme, s):
         txt_left, img_left = MARGIN, Emu(MARGIN + half + Inches(0.5))
     if img:
         # Top-aligned so the picture lines up with the text column beside it.
-        _place_image(slide, img, img_left, top, half, height, valign="top")
+        _place_image(slide, img, img_left, top, half, height, valign="top",
+                     alt=s.get("alt") or s.get("title"))
     bullets = s.get("bullets")
     if bullets:
         add_text(slide, _bullet_paragraphs(theme, bullets), txt_left, top,

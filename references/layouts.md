@@ -68,6 +68,8 @@ a mission statement. Give it its own slide — the whitespace is the point.
 
 ## `image`
 A picture with optional supporting text.
+- `alt` sets the picture's alt text (defaults to the slide title); screen
+  readers announce it, and the audit flags pictures without one.
 - `image` (path), `position`: `right` (default) | `left` | `full`, `title`,
   `bullets[]` or `body`
 - `full` makes it edge-to-edge with the title in a bar across the bottom.
