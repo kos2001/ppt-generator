@@ -31,7 +31,8 @@ local: no server, no API, native `.pptx` via [python-pptx](https://python-pptx.r
   remain editable in PowerPoint; real bullets and speaker notes.
 - **Validator + visual QA** — structure, density, contrast and dry-run fit
   checks; LibreOffice or PowerPoint contact-sheet previews with an
-  empty-space check.
+  empty-space check; `audit_pptx.py` audits any deck (generated or existing)
+  against the SlideAudit flaw taxonomy.
 - **Edit existing decks** (Mode B) — replace text, edit tables/charts, refit
   images, add template chrome, renumber pages; a COM path for DRM-protected
   decks on Windows.
@@ -105,6 +106,7 @@ All slides below were rendered from `assets/spec.example.json` (plus one
 | `scripts/textfit.py` | Text measurement used for fitting and linting. |
 | `scripts/icons.py`, `assets/icons/` | Bundled icons (Phosphor, MIT) and their drawing code. |
 | `scripts/render_preview.py` | LibreOffice contact-sheet preview + layout metrics. |
+| `scripts/audit_pptx.py` | Audit any deck for design flaws (SlideAudit taxonomy): overflow, occlusion, tiny text, contrast, image quality, alt text. |
 | `scripts/edit_pptx.py`, `extract_pptx.py`, `inspect_pptx.py` | Mode B: read and edit existing decks. |
 | `scripts/*_com.py`, `thumbnail.py` | Windows PowerPoint (COM) tooling and previews. |
 | `tests/` | Renderer/validator regression tests (`python3 -m unittest discover -s tests`). |
