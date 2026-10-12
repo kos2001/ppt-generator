@@ -22,6 +22,8 @@ import validate_spec  # noqa: E402
 import icons  # noqa: E402
 import build_icon_set  # noqa: E402
 import render_preview  # noqa: E402
+import audit_pptx  # noqa: E402
+import inspect_pptx  # noqa: E402
 from templates import THEMES  # noqa: E402
 
 from pptx import Presentation  # noqa: E402
@@ -370,6 +372,109 @@ class LayoutMetricsTests(unittest.TestCase):
             m = render_preview.layout_metrics([sparse, full])
         self.assertGreater(m[0]["empty_bottom"], render_preview.EMPTY_BOTTOM_LIMIT)
         self.assertLess(m[1]["empty_bottom"], render_preview.EMPTY_BOTTOM_LIMIT)
+
+
+def _foreign_deck(path):
+    """A deck as another tool might hand it over: default placeholders, a
+    group, tiny and low-contrast text, a stretched low-res picture, an
+    off-slide box, Hangul without a:ea."""
+    from PIL import Image
+    from pptx.util import Inches, Pt
+    from pptx.dml.color import RGBColor
+    img = path + ".png"
+    Image.new("RGB", (200, 100), "#3366CC").save(img)
+    prs = Presentation()
+    s = prs.slides.add_slide(prs.slide_layouts[1])
+    s.shapes.title.text = "분기 실적 보고"
+    s.placeholders[1].text_frame.text = "매출 증가"
+    tb = s.shapes.add_textbox(Inches(1), Inches(5.6), Inches(7), Inches(0.4))
+    tb.text_frame.text = "출처: 내부 데이터"
+    tb.text_frame.paragraphs[0].runs[0].font.size = Pt(8)
+    tb2 = s.shapes.add_textbox(Inches(0.5), Inches(6.2), Inches(8), Inches(0.4))
+    tb2.text_frame.text = "연한 회색 주석"
+    tb2.text_frame.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xBB, 0xBB, 0xBB)
+    tb2.text_frame.paragraphs[0].runs[0].font.size = Pt(14)
+    s2 = prs.slides.add_slide(prs.slide_layouts[6])
+    s2.shapes.add_picture(img, Inches(0.5), Inches(0.5), width=Inches(8), height=Inches(6))
+    grp = s2.shapes.add_group_shape()
+    grp.shapes.add_textbox(Inches(1), Inches(1), Inches(3), Inches(0.5)).text_frame.text = "그룹 A"
+    grp.shapes.add_textbox(Inches(1.2), Inches(1.1), Inches(3), Inches(0.5)).text_frame.text = "그룹 B"
+    s2.shapes.add_textbox(Inches(9), Inches(3), Inches(3), Inches(1)).text_frame.text = "off slide"
+    prs.save(path)
+
+
+class AuditTests(unittest.TestCase):
+    def test_foreign_deck_flaws_are_found(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "foreign.pptx")
+            _foreign_deck(path)
+            f = audit_pptx.audit(path)
+        cats = {(x["slide"], x["category"]) for x in f}
+        self.assertIn((1, "Inappropriate Font Sizing"), cats)
+        self.assertIn((1, "Insufficient Contrast"), cats)
+        self.assertIn((2, "Content Overflow or Truncation"), cats)      # off-slide
+        self.assertIn((2, "Low-Quality or Distorted Images"), cats)
+        self.assertIn((2, "Improper Image Scaling or Size"), cats)
+        self.assertIn((2, "Occluded Content"), cats)                    # inside a group
+        self.assertIn((2, "Accessibility"), cats)                       # file-name alt text
+        self.assertTrue(any(x["slide"] == 0 and "Korean" in x["message"] for x in f))
+
+    def test_generated_decks_audit_clean_in_every_template(self):
+        import tempfile
+        for name in THEMES:
+            with self.subTest(template=name), tempfile.TemporaryDirectory() as d:
+                spec = load(EXAMPLE)
+                spec["template"] = name
+                path = os.path.join(d, "deck.pptx")
+                build_pptx.build(spec, path, report=False)
+                bad = [x for x in audit_pptx.audit(path) if x["severity"] != "info"]
+                self.assertEqual(bad, [])
+
+    def test_overflowing_deck_is_an_error(self):
+        import tempfile
+        spec = {"slides": [{"layout": "bullets", "title": "Too much", "split": False,
+                            "bullets": ["항목 %d번은 꽤 길게 작성된 설명 문장입니다" % i
+                                        for i in range(30)]}]}
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "deck.pptx")
+            build_pptx.build(spec, path, report=False)
+            f = audit_pptx.audit(path)
+        self.assertTrue(any(x["severity"] == "error"
+                            and x["category"] == "Content Overflow or Truncation" for x in f))
+
+    def test_image_slides_carry_alt_text(self):
+        import tempfile
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as d:
+            img = os.path.join(d, "a.png")
+            Image.new("RGB", (1600, 900), "white").save(img)
+            spec = {"slides": [{"layout": "image", "title": "Plant layout", "image": img},
+                               {"layout": "image", "title": "x", "image": img,
+                                "alt": "Floor plan of plant 2", "position": "full"}]}
+            prs = Presentation(render(spec))
+        descr = [sh._element.nvPicPr.cNvPr.get("descr") for sl in prs.slides
+                 for sh in sl.shapes if sh.shape_type == 13]
+        self.assertEqual(descr, ["Plant layout", "Floor plan of plant 2"])
+
+    def test_section_number_stays_readable_on_dark_bleed(self):
+        spec = {"template": "samsung", "slides": [
+            {"layout": "section", "number": "01", "title": "Part"}]}
+        slide = Presentation(render(spec)).slides[0]
+        run = [r for sh in slide.shapes if sh.has_text_frame
+               for p in sh.text_frame.paragraphs for r in p.runs if r.text == "01"][0]
+        bleed = THEMES["samsung"].get("bleed", THEMES["samsung"]["primary"])
+        self.assertGreaterEqual(validate_spec.contrast(str(run.font.color.rgb), bleed), 3.0)
+
+    def test_inspect_geometry(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "deck.pptx")
+            build_pptx.build(load(EXAMPLE), path, report=False)
+            slides = inspect_pptx.inspect(path, geometry=True)
+        shapes = [sh for s in slides for sh in s["shapes"] if "text" in sh]
+        self.assertTrue(all(len(sh["box_in"]) == 4 for sh in shapes))
+        self.assertTrue(any("font_pt" in sh for sh in shapes))
 
 
 class ValidatorTests(unittest.TestCase):

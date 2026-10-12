@@ -68,7 +68,7 @@ two_column  title, left{heading,bullets|body}, right{...}
 comparison  title, left{heading,bullets}, right{heading,bullets}
 metrics     title, metrics[]{value,label,sublabel}        (max 4; keep value short)
 quote       quote, attribution, title (title shows in the bar on bar themes)
-image       title, image (path), position(right|left|full), bullets|body
+image       title, image (path), alt, position(right|left|full), bullets|body
 table       title, table{header[], rows[][]}, split
 chart       title, chart{type,categories[],series,highlight,number_format}
 diagram     title, diagram{type, nodes[]{id?,title,desc}, edges[]?, direction?}

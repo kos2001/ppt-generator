@@ -293,6 +293,17 @@ line for any slide whose bottom third or more is empty (also saved as
 `layout_metrics.json`). Title, section and quote slides are sparse on
 purpose; elsewhere grow the content or switch layout.
 
+Then run the automated audit and review each slide against the **19-category
+SlideAudit taxonomy** in `references/review-taxonomy.md` — layout, typography,
+color, imagery. Giving the reviewer the full taxonomy plus an object
+description alongside the image was what made slide critique accurate in that
+study, so use all three inputs:
+
+```bash
+python3 scripts/audit_pptx.py deck.pptx               # geometry checks, tagged by category
+python3 scripts/inspect_pptx.py deck.pptx --geometry   # object description per slide
+```
+
 Before delivering, write down each issue you found as **blocker** (text cut
 off, overlap, unreadable, wrong number), **major** (overflow risk, orphaned
 title word, empty or overcrowded slide, chart highlighting the wrong thing)
@@ -353,8 +364,13 @@ path** below for the full command set.
 
 **When the ask is vague ("이 파일 수정해 줘", "fix this deck") — don't ask what
 to change. Inspect first, then act.** A bare "fix it" is an invitation to find
-the problems, not a prompt to interview the user. Run `inspect_pptx.py` (and a
-`thumbnail.py` grid when the issue might be visual) to see the real state.
+the problems, not a prompt to interview the user. Run `audit_pptx.py` (design
+flaws tagged by SlideAudit category: overflow, occlusion, tiny text, contrast,
+low-res or stretched images, missing alt text, Hangul without a pinned font),
+`inspect_pptx.py --geometry` (shape map with positions and font sizes), and a
+`thumbnail.py` grid when the issue might be visual — then fix what they show.
+After editing, run `audit_pptx.py` again on the output: the edit must not add
+errors or warnings that weren't in the original.
 
 **On a 수정/edit request, DELETE the deck's pre-existing stale scratch — always,
 before you re-author or re-render the deck.** A deck this skill generated leaves
