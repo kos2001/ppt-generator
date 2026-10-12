@@ -1,0 +1,139 @@
+{
+ "template": "corporate",
+ "footer": "레이아웃 테스트",
+ "slides": [
+  {
+   "layout": "agenda",
+   "title": "보고 순서",
+   "items": [
+    "1년 성과 요약",
+    {
+     "title": "분기별 자동 해결률",
+     "desc": "1Q 34% → 4Q 61%"
+    },
+    "고객 경험 변화",
+    "운영 효율",
+    "2년차 확장 과제"
+   ],
+   "current": 2
+  },
+  {
+   "layout": "agenda",
+   "title": "Agenda",
+   "items": [
+    "Context",
+    "Results",
+    "Customer impact",
+    "Cost",
+    "Risks",
+    "Roadmap",
+    "Asks"
+   ]
+  },
+  {
+   "layout": "big_number",
+   "title": "연간 비용 절감",
+   "value": "9.8억 원",
+   "label": "상담 인건비·인프라 비용 합계",
+   "takeaway": "도입 비용 3.1억 원 대비 1년 내 회수"
+  },
+  {
+   "layout": "cards",
+   "title": "2년차 확장 방향",
+   "subtitle": "채널 · 지식 · 언어",
+   "cards": [
+    {
+     "title": "음성 채널",
+     "value": "+1채널",
+     "bullets": [
+      "콜센터 IVR 연동",
+      "STT 정확도 95% 목표"
+     ],
+     "icon": "microphone"
+    },
+    {
+     "title": "지식베이스",
+     "value": "3,200건",
+     "bullets": [
+      "사내 위키 연동",
+      "답변 근거 표시"
+     ]
+    },
+    {
+     "title": "다국어",
+     "value": "2개 언어",
+     "bullets": [
+      "영어·일본어",
+      "번역 품질 검수"
+     ]
+    }
+   ]
+  },
+  {
+   "layout": "matrix",
+   "title": "과제 우선순위",
+   "x_axis": {
+    "low": "구현 난이도 낮음",
+    "high": "높음"
+   },
+   "y_axis": {
+    "low": "효과 낮음",
+    "high": "효과 높음"
+   },
+   "highlight": 1,
+   "quadrants": [
+    {
+     "title": "즉시 실행",
+     "items": [
+      "지식베이스 연동",
+      "FAQ 자동 갱신"
+     ]
+    },
+    {
+     "title": "전략 과제",
+     "items": [
+      "음성 채널"
+     ]
+    },
+    {
+     "title": "여유 시 진행",
+     "items": [
+      "UI 테마 개선"
+     ]
+    },
+    {
+     "title": "보류",
+     "items": [
+      "자체 LLM 학습"
+     ]
+    }
+   ]
+  },
+  {
+   "layout": "icon_grid",
+   "title": "2년차 핵심 역량",
+   "items": [
+    {
+     "icon": "음성",
+     "title": "음성 채널",
+     "desc": "콜센터 IVR 연동"
+    },
+    {
+     "icon": "지식",
+     "title": "지식베이스",
+     "desc": "사내 위키 연동"
+    },
+    {
+     "icon": "다국어",
+     "title": "다국어",
+     "desc": "영어 · 일본어"
+    },
+    {
+     "icon": "보안",
+     "title": "보안 강화",
+     "desc": "개인정보 마스킹"
+    }
+   ]
+  }
+ ]
+}

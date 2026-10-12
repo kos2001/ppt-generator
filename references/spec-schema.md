@@ -16,6 +16,11 @@ python scripts/build_pptx.py spec.json -o deck.pptx
 | `title` | string | `"presentation"` | Used for the default output filename. |
 | `footer` | string | — | Footer text shown on interior content slides. Per-slide `footer` overrides it. |
 | `slide_numbers` | bool | `true` | Show page numbers on interior content slides. |
+| `title_style` | string | `"topic"` | `"topic"` = noun-phrase labels; `"assertion"` = each content-slide title is a one-sentence takeaway (≤ 2 lines). A slide may override it with its own `title_style`. |
+| `font` | string | template's | Override heading + body Latin font for the whole deck. |
+| `ea_font` | string | `"Malgun Gothic"` | East Asian (Korean/CJK) font written to every run. |
+| `auto_split` | bool | `true` | Split overlong `bullets` / `table` slides onto continuation slides. |
+| `header_label` | string | template's | Top-right classification label (`report` template); `""` disables. |
 | `slides` | array | **required** | The slides, in order. |
 
 Title / section / closing / full-bleed image slides never show a footer or
@@ -32,6 +37,10 @@ layout-specific fields. Common optional fields:
   chart, image, diagram). Use it to state the slide's angle in a phrase, e.g.
   "The skill does the content design, not just text dumping."
 - `footer` — overrides the deck footer for this one slide.
+- `title_style` — overrides the deck's `title_style` for this slide (e.g.
+  `"topic"` on an agenda slide in an assertion deck).
+- `notes` — speaker notes (string, or list of strings = one paragraph each).
+  Put the detail and the spoken explanation here, not on the slide.
 
 See `layouts.md` for the full per-layout field reference and when to use each.
 
@@ -53,17 +62,23 @@ Anywhere `bullets` appears, each item is either a plain string or an object:
 ```
 title       title, subtitle, eyebrow, author, date
 section     title, subtitle, number
-bullets     title, eyebrow, lead, bullets[]
+bullets     title, eyebrow, subtitle, bullets[], numbered, start_at, split   (lead: legacy)
 content     title, eyebrow, body (string | string[])
 two_column  title, left{heading,bullets|body}, right{...}
 comparison  title, left{heading,bullets}, right{heading,bullets}
 metrics     title, metrics[]{value,label,sublabel}        (max 4)
 quote       quote, attribution
 image       title, image (path), position(right|left|full), bullets|body
-table       title, table{header[], rows[][]}
-chart       title, chart{type,categories[],series}
+table       title, table{header[], rows[][]}, split
+chart       title, chart{type,categories[],series,highlight,number_format}
 diagram     title, diagram{type, nodes[]{title,desc}}
+agenda      title, items[] (str | {title,desc}), current
+big_number  title, value, label, takeaway
+cards       title, cards[]{title,icon,value,bullets|body}    (2–4)
+icon_grid   title, items[]{icon,title,desc}               (3–6)
+matrix      title, quadrants[4]{title,items[]}, x_axis{low,high}, y_axis{low,high}, highlight
 closing     title, subtitle
+(any)       notes, footer, eyebrow, subtitle
 ```
 
 ## Diagram data
@@ -89,15 +104,30 @@ For `hierarchy`, `nodes[0]` is the root and the rest are its children. Keep to
 
 ```json
 "chart": {
-  "type": "column",                     // column | bar | line | pie | area
+  "type": "column",                     // see types below
   "categories": ["Q1", "Q2", "Q3"],
   "series": [                           // multi-series: list of {name, values}
     {"name": "2024", "values": [3, 4, 5]},
     {"name": "2025", "values": [4, 5, 7]}
   ],
-  "data_labels": false
+  "number_format": "0.0",               // optional Excel format for axis + labels
+  "data_labels": false                  // optional; see defaults below
 }
 ```
+
+`type` ∈ `column` | `bar` (horizontal, first category on top) |
+`stacked_column` | `stacked_bar` | `line` | `area` | `pie` | `doughnut`.
+
+- **Values must be numbers** with the same count as `categories`. Units go in
+  `number_format`, e.g. `"#,##0"`, `"0%"` (values as fractions),
+  `"\"$\"0.0\"M\""`, `"#,##0\"억\""`.
+- **`highlight`** (single-series column/bar): a category name or index. That
+  bar gets the accent color and the rest turn grey — use it to point at the
+  one bar the slide is about.
+- **`data_labels`** defaults to on for single-series charts (≤ 12 points) and
+  pie/doughnut, off for multi-series. Pie/doughnut labels show percentages
+  (`"percent": false` shows raw values).
+- Series colors come from the template palette, so charts match the deck.
 
 For a single series you may pass a bare number list instead of the `{name,
 values}` form. `series_name`, `data_labels`, and `type` still apply alongside it:
