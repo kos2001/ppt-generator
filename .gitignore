@@ -13,6 +13,22 @@ ppt-generator-workspace/
 /tmp/
 *.tmp
 
+# Visual-QA renders and extracted-image scratch (regenerated from decks/specs)
+*.thumbs/
+*.grid.png
+/assets/cca_img/
+/assets/img_src/
+
+# Deck outputs — generated artifacts, not source (removed from the repo)
+decks/
+
+# Eval fixtures are binary mixed decks supplied locally (see evals/fixtures/README.md)
+evals/fixtures/*.pptx
+
+# Local virtualenv and ad-hoc renders
+.venv/
+/*.pptx
+
 # render_preview.py output (LibreOffice previews) and local Claude docs/state
 *_preview/
 claudedocs/

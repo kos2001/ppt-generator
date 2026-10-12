@@ -12,20 +12,37 @@ local: no server, no API, native `.pptx` via [python-pptx](https://python-pptx.r
 
 ## Features
 
-- **6 templates** — `corporate`, `minimal`, `dark`, `vibrant`, `academic`,
-  `report` (black header bar, page numbers, optional "Confidential" marker).
-- **13 layouts** — title, section, bullets, content, two_column, comparison,
-  metrics, quote, image, table, chart, **diagram**, closing.
+- **7 templates** — `samsung` (default), `corporate`, `minimal`, `dark`,
+  `vibrant`, `academic`, `report`; every one passes WCAG contrast checks.
+- **18 layouts** — title, section, agenda, bullets (incl. numbered), content,
+  two_column, comparison, cards, metrics, big_number, quote, image, table,
+  chart, **diagram**, matrix (2×2), icon_grid, closing.
 - **Editable diagrams** — `process`, `cycle`, `hierarchy`, `pyramid`, `funnel`,
-  `timeline`, drawn as native PowerPoint shapes (not flattened images), so every
-  box stays editable after generation.
-- **Native charts & tables** that remain editable in PowerPoint.
+  `timeline`, `flowchart`, drawn as native PowerPoint shapes (not flattened
+  images), so every box stays editable after generation.
+- **165 editable icons** (Phosphor, MIT) drawn as recolorable shapes, with
+  English/Korean concept aliases (`"보안"` → shield).
+- **Text that fits** — measured before writing (calibrated to Malgun Gothic and
+  PowerPoint's line rule): titles shrink or wrap, body text scales, overlong
+  lists and tables continue on "(계속)/(cont.)" slides.
+- **Korean typography** — East Asian font and `ko-KR` on every run, word (어절)
+  line breaks, no faux-italic Hangul.
+- **Themed native charts & tables** (palette, highlight, number formats) that
+  remain editable in PowerPoint; real bullets and speaker notes.
+- **Validator + visual QA** — structure, density, contrast and dry-run fit
+  checks; LibreOffice or PowerPoint contact-sheet previews with an
+  empty-space check.
+- **Edit existing decks** (Mode B) — replace text, edit tables/charts, refit
+  images, add template chrome, renumber pages; a COM path for DRM-protected
+  decks on Windows.
 - Restyle a whole deck by changing one `template` field.
 
 ## Requirements
 
 ```bash
-pip install python-pptx Pillow
+python3 -m venv .venv && source .venv/bin/activate   # optional
+pip install python-pptx Pillow pymupdf
+# visual previews: LibreOffice (any OS) or desktop PowerPoint + pywin32 (Windows)
 ```
 
 ## Quick start
@@ -53,6 +70,30 @@ Minimal spec:
 }
 ```
 
+## Screens
+
+All slides below were rendered from `assets/spec.example.json` (plus one
+`diagram` slide) and exported from the generated `.pptx` without manual edits.
+
+<table>
+<tr>
+<td><img src="docs/img/corporate-metrics.png" alt="corporate template, metrics layout" width="100%"></td>
+<td><img src="docs/img/dark-chart.png" alt="dark template, chart layout" width="100%"></td>
+</tr>
+<tr>
+<td><code>corporate</code> template, <code>metrics</code> layout</td>
+<td><code>dark</code> template, <code>chart</code> layout (native, editable chart)</td>
+</tr>
+<tr>
+<td><img src="docs/img/vibrant-comparison.png" alt="vibrant template, comparison layout" width="100%"></td>
+<td><img src="docs/img/minimal-diagram.png" alt="minimal template, process diagram layout" width="100%"></td>
+</tr>
+<tr>
+<td><code>vibrant</code> template, <code>comparison</code> layout</td>
+<td><code>minimal</code> template, <code>diagram</code> layout (<code>process</code>, native shapes)</td>
+</tr>
+</table>
+
 ## Repository layout
 
 | Path | What |
@@ -60,10 +101,16 @@ Minimal spec:
 | `SKILL.md` | The skill definition and workflow (entry point for Claude Code). |
 | `scripts/build_pptx.py` | Renderer: spec JSON + template → `.pptx`. |
 | `scripts/templates.py` | Template (theme) definitions. |
-| `scripts/validate_spec.py` | Spec validator. |
+| `scripts/validate_spec.py` | Spec validator (deck + edit specs, dry-run fit check). |
+| `scripts/textfit.py` | Text measurement used for fitting and linting. |
+| `scripts/icons.py`, `assets/icons/` | Bundled icons (Phosphor, MIT) and their drawing code. |
+| `scripts/render_preview.py` | LibreOffice contact-sheet preview + layout metrics. |
+| `scripts/edit_pptx.py`, `extract_pptx.py`, `inspect_pptx.py` | Mode B: read and edit existing decks. |
+| `scripts/*_com.py`, `thumbnail.py` | Windows PowerPoint (COM) tooling and previews. |
+| `tests/` | Renderer/validator regression tests (`python3 -m unittest discover -s tests`). |
+| `evals/` | Mode A/B scenario evals and graders. |
 | `references/` | Spec schema, layout catalog, template catalog. |
 | `assets/spec.example.json` | Full worked example exercising every layout. |
-| `decks/` | Example generated decks and their specs. |
 | `ppt-generator.skill` | Packaged skill, installable into Claude Code. |
 
 ## Install as a Claude Code skill
@@ -78,8 +125,10 @@ or install the packaged `ppt-generator.skill` file.
 
 ## Content style
 
-Slide titles are noun phrases (not sentences); body content is short bulleted
-noun-phrase fragments rather than prose. See `SKILL.md` for the full design
+Slide titles are noun phrases by default (`"title_style": "assertion"` switches
+content slides to one-sentence takeaway headlines); body content is short
+bulleted noun-phrase fragments rather than prose, with the explanation in
+speaker notes. See `SKILL.md` for the full design
 guidance.
 
 ## License

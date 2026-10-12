@@ -12,7 +12,7 @@ python scripts/build_pptx.py spec.json -o deck.pptx
 
 | Field | Type | Default | Notes |
 |-------|------|---------|-------|
-| `template` | string | `"corporate"` | One of the template names (see `templates.md`). |
+| `template` | string | `"samsung"` | One of the template names (see `templates.md`). |
 | `title` | string | `"presentation"` | Used for the default output filename. |
 | `footer` | string | — | Footer text shown on interior content slides. Per-slide `footer` overrides it. |
 | `slide_numbers` | bool | `true` | Show page numbers on interior content slides. |
@@ -60,18 +60,18 @@ Anywhere `bullets` appears, each item is either a plain string or an object:
 ## Quick layout-to-fields map
 
 ```
-title       title, subtitle, eyebrow, author, date
+title       title, subtitle, eyebrow, author, date, background(hex), color(hex)
 section     title, subtitle, number
 bullets     title, eyebrow, subtitle, bullets[], numbered, start_at, split   (lead: legacy)
 content     title, eyebrow, body (string | string[])
 two_column  title, left{heading,bullets|body}, right{...}
 comparison  title, left{heading,bullets}, right{heading,bullets}
-metrics     title, metrics[]{value,label,sublabel}        (max 4)
-quote       quote, attribution
+metrics     title, metrics[]{value,label,sublabel}        (max 4; keep value short)
+quote       quote, attribution, title (title shows in the bar on bar themes)
 image       title, image (path), position(right|left|full), bullets|body
 table       title, table{header[], rows[][]}, split
 chart       title, chart{type,categories[],series,highlight,number_format}
-diagram     title, diagram{type, nodes[]{title,desc}}
+diagram     title, diagram{type, nodes[]{id?,title,desc}, edges[]?, direction?}
 agenda      title, items[] (str | {title,desc}), current
 big_number  title, value, label, takeaway
 cards       title, cards[]{title,icon,value,bullets|body}    (2–4)
@@ -96,9 +96,25 @@ Native, editable diagrams (boxes/arrows/connectors stay editable in PowerPoint):
 }
 ```
 
-`type` ∈ `process` | `cycle` | `hierarchy` | `pyramid` | `funnel` | `timeline`.
-For `hierarchy`, `nodes[0]` is the root and the rest are its children. Keep to
-3–6 nodes. See `layouts.md` for what each type communicates.
+`type` ∈ `process` | `cycle` | `hierarchy` | `pyramid` | `funnel` | `timeline` |
+`flowchart`. For `hierarchy`, `nodes[0]` is the root and the rest are its
+children. Keep to 3–6 nodes.
+
+`flowchart` draws an arbitrary directed graph (branches, merges, loop-backs),
+auto-laid out: give each node an `id` and add `edges` (`[from, to]` pairs or
+`{from, to, label}`), plus optional `direction` (`"LR"` default | `"TD"`).
+Layering, back-edge handling, and crossing minimization are automatic.
+
+```json
+"diagram": {
+  "type": "flowchart", "direction": "LR",
+  "nodes": [{"id": "a", "title": "수집"}, {"id": "b", "title": "분석"},
+            {"id": "c", "title": "배포"}],
+  "edges": [["a", "b"], {"from": "b", "to": "c", "label": "승인"}]
+}
+```
+
+See `layouts.md` for what each type communicates.
 
 ## Chart data
 

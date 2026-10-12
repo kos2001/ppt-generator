@@ -143,7 +143,7 @@ class BuildTests(unittest.TestCase):
         prs = Presentation(render(spec))
         ser = [s for s in prs.slides[0].shapes if s.has_chart][0].chart.plots[0].series[0]
         colors = [str(ser.points[i].format.fill.fore_color.rgb) for i in range(3)]
-        self.assertEqual(colors[1], THEMES["corporate"]["accent"])
+        self.assertEqual(colors[1], THEMES[build_pptx.DEFAULT_THEME]["accent"])
         self.assertEqual(colors[0], colors[2])
         self.assertNotEqual(colors[0], colors[1])
 

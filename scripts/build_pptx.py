@@ -43,6 +43,7 @@ from pptx.oxml.ns import qn
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from templates import get_theme, DEFAULT_THEME, THEMES, DEFAULT_EA_FONT  # noqa: E402
+from flowchart_layout import layer_graph, normalize_edges  # noqa: E402
 import textfit  # noqa: E402
 import icons  # noqa: E402
 
@@ -380,6 +381,11 @@ def _header_bar(slide, theme, title, *, eyebrow=None):
     eyebrow_h = Inches(0.3) if eyebrow else 0
     bar_h = max(Inches(1.0), title_h + eyebrow_h + Inches(0.3))
     add_rect(slide, 0, 0, SLIDE_W, bar_h, fill_hex=theme["primary"])
+    # Optional thin rule directly under the bar (a brand accent line). Themes
+    # that don't set `header_rule` (e.g. report) get no divider.
+    rule = theme.get("header_rule")
+    if rule:
+        add_rect(slide, 0, bar_h, SLIDE_W, Inches(0.05), fill_hex=rule)
     # Keep the eyebrow + title stacked WITHIN the bar — on a dark bar a title
     # that spills below it would be white text on the white body (invisible).
     if eyebrow:
@@ -402,19 +408,28 @@ _LIGHT_TOP_LAYOUTS = {"title", "quote", "image"}
 _BLEED_LAYOUTS = {"section", "closing"}
 
 
-def _classification_marker(slide, theme, layout_name):
+def _classification_marker(slide, theme, layout_name, bg_hex=None):
     """Draw the classification label (e.g. "Confidential") in the top-right
     corner of the slide, on every slide, in a color that contrasts with that
     slide's background. Enabled by the theme's `header_label`."""
     label = theme.get("header_label")
     if not label:
         return
-    if layout_name in _LIGHT_TOP_LAYOUTS:
-        color = theme["primary"]
+    if bg_hex:
+        # An explicit per-slide background (e.g. a dark cover) overrides the
+        # layout-based guess: pick light/dark text by the background's luminance.
+        r, g, b = int(bg_hex[0:2], 16), int(bg_hex[2:4], 16), int(bg_hex[4:6], 16)
+        lum = 0.299 * r + 0.587 * g + 0.114 * b
+        color = theme["on_primary"] if lum < 128 else theme["primary"]
     elif layout_name in _BLEED_LAYOUTS:
-        color = theme["on_bleed"]
+        color = theme.get("on_bleed", theme["on_primary"])
     else:
-        color = theme["on_primary"]
+        light_top = layout_name in _LIGHT_TOP_LAYOUTS
+        # In bar-style themes the quote slide now carries the dark header bar,
+        # so its top is dark — the marker must switch to the light color.
+        if light_top and layout_name == "quote" and theme.get("header_style") == "bar":
+            light_top = False
+        color = theme["primary"] if light_top else theme["on_primary"]
     add_text(slide, label, SLIDE_W - MARGIN - Inches(3.0), Inches(0.2),
              Inches(3.0), Inches(0.6), font=theme["body_font"], size=18,
              color=color, bold=True, align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.TOP,
@@ -431,8 +446,11 @@ def _footer(slide, theme, slide_no=None, total=None, footer_text=None):
                  SLIDE_W - 2 * MARGIN - Inches(1.0), Inches(0.3),
                  font=theme["body_font"], size=10, color=theme["text_muted"])
     if slide_no is not None:
-        add_text(slide, str(slide_no), SLIDE_W - MARGIN - Inches(1.2),
-                 SLIDE_H - Inches(0.62), Inches(1.2), Inches(0.42),
+        # Bottom-right page number, forced to "current / total" (e.g. "3 / 15")
+        # when the total is known, so the reader always sees their position.
+        num = "%d / %d" % (slide_no, total) if total else str(slide_no)
+        add_text(slide, num, SLIDE_W - MARGIN - Inches(1.6),
+                 SLIDE_H - Inches(0.62), Inches(1.6), Inches(0.42),
                  font=theme["body_font"], size=16, color=theme["text_muted"],
                  align=PP_ALIGN.RIGHT, fit=False)
 
@@ -474,16 +492,28 @@ def _body_height(top):
 # Slide layouts — one function per layout name in the spec
 # --------------------------------------------------------------------------- #
 def layout_title(slide, theme, s):
-    fill_background(slide, theme)
+    # Optional per-slide background override (e.g. a dark cover): fill the whole
+    # slide with the given hex and switch the text to light colors so it stays
+    # legible. Without it, the title slide renders on the theme background.
+    bg = s.get("background")
+    if bg:
+        add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill_hex=bg)
+        title_color = s.get("color", "FFFFFF")
+        eyebrow_color = sub_color = meta_color = title_color
+    else:
+        fill_background(slide, theme)
+        title_color = theme["primary"]
+        eyebrow_color = theme["secondary"]
+        sub_color = meta_color = theme["text_muted"]
     # Big accent block on the left edge for visual weight.
     add_rect(slide, 0, 0, Inches(0.4), SLIDE_H, fill_hex=theme["accent"])
     add_text(slide, s.get("eyebrow", "").upper(), Inches(1.1), Inches(2.1),
              SLIDE_W - Inches(2.0), Inches(0.4),
-             font=theme["body_font"], size=14, color=theme["secondary"], bold=True)
+             font=theme["body_font"], size=14, color=eyebrow_color, bold=True)
     add_text(slide, s.get("title", ""), Inches(1.1), Inches(2.5),
              SLIDE_W - Inches(2.0), Inches(2.0),
              font=theme["heading_font"], size=theme["title_pt"] + 8,
-             color=theme["primary"], bold=True, line_spacing=1.0,
+             color=title_color, bold=True, line_spacing=1.0,
              anchor=MSO_ANCHOR.BOTTOM)
     _check_orphan(s.get("title", ""), SLIDE_W - Inches(2.0),
                   theme["title_pt"] + 8, theme["heading_font"])
@@ -491,17 +521,17 @@ def layout_title(slide, theme, s):
         add_text(slide, s["subtitle"], Inches(1.1), Inches(4.65),
                  SLIDE_W - Inches(2.0), Inches(1.0),
                  font=theme["body_font"], size=theme["body_pt"] + 4,
-                 color=theme["text_muted"], line_spacing=1.1)
+                 color=sub_color, line_spacing=1.1)
     meta = "   |   ".join(x for x in [s.get("author"), s.get("date")] if x)
     if meta:
         add_text(slide, meta, Inches(1.1), SLIDE_H - Inches(1.0),
                  SLIDE_W - Inches(2.0), Inches(0.4),
-                 font=theme["body_font"], size=13, color=theme["text_muted"])
+                 font=theme["body_font"], size=13, color=meta_color)
 
 
 def layout_section(slide, theme, s):
     # Full-bleed divider slide.
-    add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill_hex=theme["bleed"])
+    add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill_hex=theme.get("bleed", theme["primary"]))
     if s.get("number"):
         add_text(slide, str(s["number"]), Inches(1.1), Inches(1.6),
                  Inches(4.0), Inches(1.5),
@@ -510,12 +540,12 @@ def layout_section(slide, theme, s):
     add_text(slide, s.get("title", ""), Inches(1.1), Inches(3.4),
              SLIDE_W - Inches(2.2), Inches(1.6),
              font=theme["heading_font"], size=theme["title_pt"],
-             color=theme["on_bleed"], bold=True, line_spacing=1.0)
+             color=theme.get("on_bleed", theme["on_primary"]), bold=True, line_spacing=1.0)
     if s.get("subtitle"):
         add_text(slide, s["subtitle"], Inches(1.1), Inches(5.1),
                  SLIDE_W - Inches(2.2), Inches(1.2),
                  font=theme["body_font"], size=theme["body_pt"] + 2,
-                 color=theme["on_bleed"], line_spacing=1.15)
+                 color=theme.get("on_bleed", theme["on_primary"]), line_spacing=1.15)
     add_rect(slide, Inches(1.1), Inches(3.2), Inches(2.2), Inches(0.08),
              fill_hex=theme["accent"])
 
@@ -673,16 +703,24 @@ def layout_metrics(slide, theme, s):
 
 def layout_quote(slide, theme, s):
     fill_background(slide, theme)
-    add_text(slide, "“", Inches(0.8), Inches(0.9), Inches(3.0), Inches(2.0),
+    # Bar-style themes (e.g. samsung/report) carry a header bar on every content
+    # slide; draw it here too so the quote slide matches the rest of the deck
+    # instead of floating on a bare background. The quote then sits below the bar.
+    if theme.get("header_style") == "bar":
+        _header_bar(slide, theme, s.get("title", ""))
+        qm_top, q_top, attr_top = Inches(1.6), Inches(2.8), Inches(5.9)
+    else:
+        qm_top, q_top, attr_top = Inches(0.9), Inches(2.3), Inches(5.6)
+    add_text(slide, "“", Inches(0.8), qm_top, Inches(3.0), Inches(2.0),
              font=theme["heading_font"], size=160, color=theme["accent"],
              bold=True, fit=False)
-    add_text(slide, s.get("quote", ""), Inches(1.6), Inches(2.3),
-             SLIDE_W - Inches(3.2), Inches(3.0),
+    add_text(slide, s.get("quote", ""), Inches(1.6), q_top,
+             SLIDE_W - Inches(3.2), Inches(2.8),
              font=theme["heading_font"], size=theme["heading_pt"] + 2,
              color=theme["primary"], italic=True, line_spacing=1.2,
              anchor=MSO_ANCHOR.MIDDLE)
     if s.get("attribution"):
-        add_text(slide, "— " + s["attribution"], Inches(1.6), Inches(5.6),
+        add_text(slide, "— " + s["attribution"], Inches(1.6), attr_top,
                  SLIDE_W - Inches(3.2), Inches(0.6),
                  font=theme["body_font"], size=theme["body_pt"],
                  color=theme["text_muted"], bold=True)
@@ -1005,18 +1043,18 @@ def layout_chart(slide, theme, s):
 
 
 def layout_closing(slide, theme, s):
-    add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill_hex=theme["bleed"])
+    add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill_hex=theme.get("bleed", theme["primary"]))
     add_rect(slide, 0, SLIDE_H - Inches(0.4), SLIDE_W, Inches(0.4),
              fill_hex=theme["accent"])
     add_text(slide, s.get("title", "Thank You"), MARGIN, Inches(2.6),
              SLIDE_W - 2 * MARGIN, Inches(1.6),
              font=theme["heading_font"], size=theme["title_pt"] + 6,
-             color=theme["on_bleed"], bold=True, align=PP_ALIGN.CENTER)
+             color=theme.get("on_bleed", theme["on_primary"]), bold=True, align=PP_ALIGN.CENTER)
     if s.get("subtitle"):
         add_text(slide, s["subtitle"], MARGIN, Inches(4.3),
                  SLIDE_W - 2 * MARGIN, Inches(1.2),
                  font=theme["body_font"], size=theme["body_pt"] + 2,
-                 color=theme["on_bleed"], align=PP_ALIGN.CENTER,
+                 color=theme.get("on_bleed", theme["on_primary"]), align=PP_ALIGN.CENTER,
                  line_spacing=1.2)
 
 
@@ -1078,13 +1116,18 @@ def _shape_label(shape, theme, title, desc=None, color=None,
     return shape
 
 
-def _connect(slide, x1, y1, x2, y2, color, width=1.75, arrow=True):
+def _connect(slide, x1, y1, x2, y2, color, width=1.75, arrow=True, dash=False):
     c = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,
                                    int(x1), int(y1), int(x2), int(y2))
     c.line.color.rgb = _rgb(color)
     c.line.width = Pt(width)
+    ln = c.line._get_or_add_ln()
+    if dash:
+        # OOXML: a:prstDash must precede a:tailEnd in the line element, and the
+        # color set above already added a:solidFill before this — so appending
+        # here keeps the schema's child order valid.
+        ln.append(ln.makeelement(qn("a:prstDash"), {"val": "dash"}))
     if arrow:
-        ln = c.line._get_or_add_ln()
         ln.append(ln.makeelement(
             qn("a:tailEnd"), {"type": "triangle", "w": "lg", "len": "lg"}))
     c.shadow.inherit = False
@@ -1154,21 +1197,27 @@ def _diag_cycle(slide, theme, nodes, top=None):
         px = cx + radius * 1.6 * math.cos(ang)
         py = cy + radius * math.sin(ang)
         centers.append((px, py))
-    # Arrows first (so boxes sit on top), connecting node i -> i+1 around the ring.
+    # Arrows first (so boxes sit on top), connecting node i -> i+1 around the
+    # ring. Draw each from the edge of one box to the edge of the next (where the
+    # center-to-center line crosses each box's rectangle) so the arrow spans the
+    # gap and touches both boxes, instead of floating as a stub in the middle.
+    hw, hh = box_w / 2, box_h / 2
+
+    def _edge(px, py, ux, uy):
+        tx = hw / abs(ux) if ux else float("inf")
+        ty = hh / abs(uy) if uy else float("inf")
+        t = min(tx, ty)
+        return px + ux * t, py + uy * t
+
     for i in range(n):
         x1, y1 = centers[i]
         x2, y2 = centers[(i + 1) % n]
         dx, dy = x2 - x1, y2 - y1
         d = math.hypot(dx, dy) or 1
-        # Distance from a box center to its edge along (dx, dy), plus a gap,
-        # so each arrow spans the visible space between two boxes.
-        edge = min((box_w / 2) / abs(dx) if dx else float("inf"),
-                   (box_h / 2) / abs(dy) if dy else float("inf")) * d
-        off = edge + Inches(0.08)
-        if d > 2 * off:
-            _connect(slide, x1 + dx / d * off, y1 + dy / d * off,
-                     x2 - dx / d * off, y2 - dy / d * off, theme["accent"],
-                     width=2.25)
+        ux, uy = dx / d, dy / d
+        sx, sy = _edge(x1, y1, ux, uy)
+        ex, ey = _edge(x2, y2, -ux, -uy)
+        _connect(slide, sx, sy, ex, ey, theme["accent"], width=2.0)
     for i, node in enumerate(nodes):
         px, py = centers[i]
         sp = _autoshape(slide, MSO_SHAPE.ROUNDED_RECTANGLE,
@@ -1300,6 +1349,123 @@ def _diag_timeline(slide, theme, nodes, top=None):
                  arrow=False)
 
 
+def _diag_flowchart(slide, theme, spec):
+    """Auto-laid-out flowchart from nodes + edges, drawn as native shapes.
+
+    The "Mermaid-like" capability that stays editable: a layered (Sugiyama-style)
+    layout positions an arbitrary directed graph — branches, merges, and
+    loop-backs — then draws real rounded-rectangle boxes and arrow connectors.
+    Unlike a Mermaid image, every box stays movable/re-typable.
+
+    spec = {nodes: [{id, title, desc}],
+            edges: [[from_id, to_id] | {from, to, label}],
+            direction: "LR" (default) | "TD"}
+    Layering and back-edge detection are shared (flowchart_layout.layer_graph);
+    feedback edges are drawn as muted return paths so cycles stay compact.
+    """
+    nodes = spec.get("nodes", [])
+    if not nodes:
+        return
+    td = str(spec.get("direction", "LR")).upper() == "TD"
+    ids, nodemap = [], {}
+    for i, nd in enumerate(nodes):
+        nid = str(nd.get("id", i))
+        ids.append(nid)
+        nodemap[nid] = nd
+    edges = [(a, b, l) for (a, b, l) in normalize_edges(spec.get("edges", []))
+             if a in nodemap and b in nodemap]
+    rank, layers, feedback = layer_graph(ids, edges)
+    n_layers = max(layers) + 1
+    max_in_layer = max(len(v) for v in layers.values())
+
+    left, top, w, h = _diag_area()
+    gap_x, gap_y = Inches(0.55), Inches(0.4)
+    if td:  # layers stack top->down; siblings spread across each row
+        box_w = min(Inches(2.6), (w - gap_x * (max_in_layer - 1)) / max_in_layer)
+        box_h = min(Inches(1.05), (h - gap_y * (n_layers - 1)) / n_layers)
+    else:   # layers march left->right; siblings stack within each column
+        box_w = min(Inches(2.3), (w - gap_x * (n_layers - 1)) / n_layers)
+        box_h = min(Inches(1.2), (h - gap_y * (max_in_layer - 1)) / max_in_layer)
+
+    rects = {}
+    for lvl in range(n_layers):
+        group = layers.get(lvl, [])
+        m = len(group)
+        if td:
+            row_w = m * box_w + (m - 1) * gap_x
+            x0 = left + (w - row_w) / 2
+            y = top + lvl * (box_h + gap_y)
+            for j, n in enumerate(group):
+                rects[n] = (x0 + j * (box_w + gap_x), y)
+        else:
+            col_h = m * box_h + (m - 1) * gap_y
+            y0 = top + (h - col_h) / 2
+            x = left + lvl * (box_w + gap_x)
+            for j, n in enumerate(group):
+                rects[n] = (x, y0 + j * (box_h + gap_y))
+
+    def _mid(n):
+        x, y = rects[n]
+        return x + box_w / 2, y + box_h / 2
+
+    # Connectors first so boxes sit on top.
+    clearance = Inches(0.22)
+    for a, b, label in edges:
+        if a == b:
+            continue  # self-loop: skip (rare); the box itself implies it
+        ax, ay = rects[a]
+        bx, by = rects[b]
+        if (a, b) not in feedback:
+            # Forward step: a straight solid arrow between adjacent box edges.
+            color = theme["accent"]
+            if td:
+                p1 = (ax + box_w / 2, ay + box_h)   # bottom-mid
+                p2 = (bx + box_w / 2, by)           # top-mid
+            else:
+                p1 = (ax + box_w, ay + box_h / 2)   # right-mid
+                p2 = (bx, by + box_h / 2)           # left-mid
+            _connect(slide, p1[0], p1[1], p2[0], p2[1], color, width=1.75)
+            lx, ly = (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
+        else:
+            # Feedback / loop-back: route a DASHED orthogonal path AROUND the
+            # boxes (over the top for LR, out the left for TD), with the
+            # arrowhead only on the final leg landing on the target box. A
+            # straight diagonal here would overlap the forward arrows and read
+            # as pointing at the wrong box; routing clear of them and dashing it
+            # makes the return direction unmistakable.
+            col = theme["secondary"]
+            if not td:  # LR flow -> out the right of the source, up, over, down
+                yline = top - clearance        # above every box, below the header
+                x_out = min(ax + box_w + clearance, left + w)  # right of the column
+                xb, ya = bx + box_w / 2, ay + box_h / 2
+                _connect(slide, ax + box_w, ya, x_out, ya, col, 1.5, arrow=False, dash=True)
+                _connect(slide, x_out, ya, x_out, yline, col, 1.5, arrow=False, dash=True)
+                _connect(slide, x_out, yline, xb, yline, col, 1.5, arrow=False, dash=True)
+                _connect(slide, xb, yline, xb, by, col, 1.5, arrow=True, dash=True)
+                lx, ly = (x_out + xb) / 2, yline - Inches(0.02)
+            else:       # TD flow -> route out the left side
+                xline = left - clearance if left - clearance > Inches(0.1) else Inches(0.1)
+                ya, yb = ay + box_h / 2, by + box_h / 2
+                _connect(slide, ax, ya, xline, ya, col, 1.5, arrow=False, dash=True)
+                _connect(slide, xline, ya, xline, yb, col, 1.5, arrow=False, dash=True)
+                _connect(slide, xline, yb, bx, yb, col, 1.5, arrow=True, dash=True)
+                lx, ly = xline, (ya + yb) / 2
+        if label:
+            add_text(slide, str(label), lx - Inches(0.7), ly - Inches(0.22),
+                     Inches(1.4), Inches(0.3), font=theme["body_font"], size=10,
+                     color=theme["text_muted"], align=PP_ALIGN.CENTER,
+                     anchor=MSO_ANCHOR.MIDDLE)
+
+    colors = _band_colors(theme, n_layers)
+    for n in ids:
+        x, y = rects[n]
+        sp = _autoshape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, x, y, box_w, box_h,
+                        colors[rank[n]])
+        nd = nodemap[n]
+        _shape_label(sp, theme, nd.get("title", n), nd.get("desc"),
+                     title_size=13, desc_size=10)
+
+
 _DIAGRAMS = {
     "process": _diag_process,
     "cycle": _diag_cycle,
@@ -1307,6 +1473,7 @@ _DIAGRAMS = {
     "pyramid": _diag_pyramid,
     "funnel": _diag_funnel,
     "timeline": _diag_timeline,
+    "flowchart": _diag_flowchart,
 }
 
 
@@ -1321,7 +1488,12 @@ def layout_diagram(slide, theme, s):
     if dtype not in _DIAGRAMS:
         print("WARN: unknown diagram type '%s' -> using 'process'" % dtype,
               file=sys.stderr)
-    fn(slide, theme, nodes, top=top)
+    # flowchart needs the edges too, so it takes the whole diagram spec; the
+    # other types are positional patterns that only need the node list.
+    if dtype == "flowchart":
+        _diag_flowchart(slide, theme, spec)
+    else:
+        fn(slide, theme, nodes, top=top)
 
 
 # --------------------------------------------------------------------------- #
@@ -1837,11 +2009,17 @@ def build(spec, out_path, report=True):
         fn(slide, theme, s)
         # Footers/numbers only on interior content slides, not full-bleed ones.
         if name not in ("title", "section", "closing", "image"):
+            # Themes can opt out of footer text (e.g. samsung) so only the
+            # page number remains on the right.
+            ftext = s.get("footer", footer_default)
+            if not theme.get("show_footer_text", True):
+                ftext = None
             _footer(slide, theme,
                     slide_no=(i + 1) if show_numbers else None,
-                    footer_text=s.get("footer", footer_default))
+                    total=len(slides),
+                    footer_text=ftext)
         # Classification marker (e.g. Confidential) on every slide's top-right.
-        _classification_marker(slide, theme, name)
+        _classification_marker(slide, theme, name, bg_hex=s.get("background"))
         _add_notes(slide, s.get("notes"))
         _check_bounds(slide, label)
 
