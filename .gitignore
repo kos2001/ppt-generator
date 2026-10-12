@@ -12,3 +12,8 @@ ppt-generator-workspace/
 # Scratch
 /tmp/
 *.tmp
+
+# render_preview.py output (LibreOffice previews) and local Claude docs/state
+*_preview/
+claudedocs/
+.claude/

@@ -1,0 +1,298 @@
+{
+ "template": "corporate",
+ "title": "korean-fixture",
+ "footer": "스트레스 테스트 · 내부용",
+ "slides": [
+  {
+   "layout": "title",
+   "eyebrow": "2026 하반기 전략",
+   "title": "클라우드 네이티브 데이터 플랫폼 전환 로드맵과 조직 운영 모델 재설계",
+   "subtitle": "엔터프라이즈 고객 대상 AI FDE 프로그램 확대를 위한 실행 계획",
+   "author": "김오석",
+   "date": "2026-10-12"
+  },
+  {
+   "layout": "bullets",
+   "title": "현재 데이터 플랫폼의 구조적 한계와 운영 비용 증가 요인 분석",
+   "subtitle": "레거시 ETL 파이프라인이 전체 장애의 60%를 차지",
+   "bullets": [
+    "온프레미스 하둡 클러스터 유지보수 비용이 전년 대비 35% 증가하여 예산 압박이 심화됨",
+    {
+     "text": "노드 교체 주기 단축",
+     "level": 1
+    },
+    {
+     "text": "라이선스 갱신 비용 상승",
+     "level": 1
+    },
+    "배치 처리 지연으로 인한 리포트 SLA 미달 사례가 분기당 평균 12건 발생",
+    "데이터 거버넌스 부재로 동일 지표의 정의가 부서마다 상이함",
+    "실시간 분석 요구사항 증가에 대응할 수 있는 스트리밍 인프라가 부재함",
+    "보안 감사에서 접근 권한 관리 미흡 지적 사항 다수 발견",
+    "엔지니어 온보딩에 평균 3개월 소요"
+   ],
+   "notes": "레거시 ETL 장애 비율과 비용 증가를 먼저 강조한다."
+  },
+  {
+   "layout": "metrics",
+   "title": "핵심 성과 지표",
+   "metrics": [
+    {
+     "value": "₩12.4억",
+     "label": "연간 절감액",
+     "sublabel": "인프라 및 라이선스 비용 통합 절감 효과 추정치"
+    },
+    {
+     "value": "99.95%",
+     "label": "가용성",
+     "sublabel": "SLA 목표"
+    },
+    {
+     "value": "3.2x",
+     "label": "처리 속도",
+     "sublabel": "배치 대비"
+    },
+    {
+     "value": "-45%",
+     "label": "장애 건수",
+     "sublabel": "전년 동기 대비"
+    }
+   ]
+  },
+  {
+   "layout": "chart",
+   "title": "분기별 처리량 추이와 2026년 4분기 처리량이 전년 대비 53% 증가한 배경 및 인프라 확장 효과",
+   "chart": {
+    "type": "column",
+    "categories": [
+     "1Q",
+     "2Q",
+     "3Q",
+     "4Q"
+    ],
+    "series": [
+     {
+      "name": "2025",
+      "values": [
+       120,
+       140,
+       155,
+       170
+      ]
+     },
+     {
+      "name": "2026",
+      "values": [
+       160,
+       190,
+       230,
+       260
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "layout": "chart",
+   "title": "리전별 매출",
+   "chart": {
+    "type": "column",
+    "categories": [
+     "서울",
+     "부산",
+     "대구",
+     "광주"
+    ],
+    "series": [
+     42,
+     18,
+     12,
+     9
+    ],
+    "highlight": "서울",
+    "number_format": "#,##0\"억\""
+   }
+  },
+  {
+   "layout": "chart",
+   "title": "채널 비중",
+   "chart": {
+    "type": "doughnut",
+    "categories": [
+     "직판",
+     "파트너",
+     "마켓플레이스"
+    ],
+    "series": [
+     55,
+     30,
+     15
+    ]
+   }
+  },
+  {
+   "layout": "diagram",
+   "title": "조직 구조",
+   "diagram": {
+    "type": "hierarchy",
+    "nodes": [
+     {
+      "title": "CDO"
+     },
+     {
+      "title": "플랫폼팀",
+      "desc": "인프라"
+     },
+     {
+      "title": "데이터팀",
+      "desc": "파이프라인"
+     },
+     {
+      "title": "분석팀",
+      "desc": "BI·ML"
+     }
+    ]
+   }
+  },
+  {
+   "layout": "diagram",
+   "title": "전환 퍼널",
+   "diagram": {
+    "type": "funnel",
+    "nodes": [
+     {
+      "title": "리드 1,200"
+     },
+     {
+      "title": "PoC 240"
+     },
+     {
+      "title": "계약 60"
+     },
+     {
+      "title": "확장 18"
+     }
+    ]
+   }
+  },
+  {
+   "layout": "comparison",
+   "title": "As-Is vs To-Be",
+   "left": {
+    "heading": "현재 (As-Is)",
+    "bullets": [
+     "배치 중심 ETL",
+     "부서별 사일로 데이터마트",
+     "수동 권한 관리",
+     "온프레미스 하둡"
+    ]
+   },
+   "right": {
+    "heading": "목표 (To-Be)",
+    "bullets": [
+     "스트리밍 + 배치 통합 레이크하우스",
+     "도메인 기반 데이터 메시",
+     "정책 기반 자동 접근 제어",
+     "멀티 클라우드"
+    ]
+   }
+  },
+  {
+   "layout": "table",
+   "title": "마이그레이션 일정",
+   "table": {
+    "header": [
+     "단계",
+     "기간",
+     "주요 산출물",
+     "담당"
+    ],
+    "rows": [
+     [
+      "1. 평가",
+      "4주",
+      "현황 분석 보고서 및 우선순위 매트릭스",
+      "아키텍처팀"
+     ],
+     [
+      "2. 파일럿",
+      "8주",
+      "2개 도메인 레이크하우스 전환",
+      "데이터팀"
+     ],
+     [
+      "3. 확산",
+      "16주",
+      "전사 도메인 전환",
+      "전사"
+     ],
+     [
+      "4. 최적화",
+      "지속",
+      "비용·성능 튜닝",
+      "SRE"
+     ]
+    ]
+   }
+  },
+  {
+   "layout": "diagram",
+   "title": "전환 프로세스",
+   "diagram": {
+    "type": "process",
+    "nodes": [
+     {
+      "title": "현황 평가",
+      "desc": "인벤토리·의존성 분석"
+     },
+     {
+      "title": "파일럿",
+      "desc": "2개 도메인"
+     },
+     {
+      "title": "확산",
+      "desc": "전사 롤아웃"
+     },
+     {
+      "title": "최적화",
+      "desc": "FinOps"
+     },
+     {
+      "title": "운영 이관",
+      "desc": "SRE 핸드오버"
+     }
+    ]
+   }
+  },
+  {
+   "layout": "quote",
+   "quote": "데이터는 플랫폼이 아니라 제품으로 다뤄야 한다. 소비자가 신뢰하고 재사용할 수 있을 때 비로소 가치가 생긴다.",
+   "attribution": "Zhamak Dehghani, Data Mesh"
+  },
+  {
+   "layout": "two_column",
+   "title": "리스크와 대응",
+   "left": {
+    "heading": "리스크",
+    "bullets": [
+     "데이터 정합성 손실",
+     "일정 지연",
+     "인력 역량 격차"
+    ]
+   },
+   "right": {
+    "heading": "대응",
+    "bullets": [
+     "이중 운영 기간 확보",
+     "단계별 게이트 리뷰",
+     "사내 아카데미 운영"
+    ]
+   }
+  },
+  {
+   "layout": "closing",
+   "title": "감사합니다",
+   "subtitle": "질의응답 · kim@example.com"
+  }
+ ]
+}
