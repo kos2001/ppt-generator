@@ -1,0 +1,187 @@
+{
+ "template": "report",
+ "title": "assertion-fixture",
+ "footer": "생성형 AI 고객지원 챗봇 도입 1년 성과 · 임원 보고",
+ "header_label": "사내 한정",
+ "slides": [
+  {
+   "layout": "title",
+   "eyebrow": "임원 보고 · 생성형 AI",
+   "title": "고객지원 챗봇 도입 1년 성과",
+   "subtitle": "자동 해결률 61% · 연간 9.8억 원 절감",
+   "date": "2026년 10월"
+  },
+  {
+   "layout": "bullets",
+   "title": "보고 순서",
+   "bullets": [
+    {
+     "text": "1년 성과 요약",
+     "bold": true
+    },
+    {
+     "text": "분기별 자동 해결률 추이",
+     "bold": true
+    },
+    {
+     "text": "도입 전후 고객 경험",
+     "bold": true
+    },
+    {
+     "text": "상담 운영 효율",
+     "bold": true
+    },
+    {
+     "text": "2년차 확장 과제",
+     "bold": true
+    }
+   ],
+   "notes": "성과 요약부터 보고드리고, 세부 지표를 거쳐 2년차 확장 과제로 마무리하겠습니다.",
+   "title_style": "topic"
+  },
+  {
+   "layout": "metrics",
+   "title": "챗봇 도입 1년, 고객 경험과 비용 두 축 모두 개선",
+   "eyebrow": "핵심 지표",
+   "subtitle": "2025.10–2026.09 운영 실적",
+   "metrics": [
+    {
+     "value": "61%",
+     "label": "자동 해결률",
+     "sublabel": "도입 전 0%"
+    },
+    {
+     "value": "35초",
+     "label": "평균 응답시간",
+     "sublabel": "도입 전 4시간"
+    },
+    {
+     "value": "4.4",
+     "label": "CSAT",
+     "sublabel": "도입 전 4.1"
+    },
+    {
+     "value": "9.8억 원",
+     "label": "연간 비용 절감",
+     "sublabel": "도입 1년 기준"
+    }
+   ],
+   "notes": "월 42,000건 문의 중 61%를 챗봇이 상담사 개입 없이 해결했습니다. 응답시간은 평균 4시간에서 35초로 줄었고, 고객 만족도는 오히려 4.1에서 4.4로 올랐습니다. 그 결과 연간 9.8억 원의 비용을 절감했습니다."
+  },
+  {
+   "layout": "section",
+   "number": "01",
+   "title": "성과 상세",
+   "subtitle": "자동 해결률 · 고객 경험 · 운영 효율"
+  },
+  {
+   "layout": "chart",
+   "title": "자동 해결률 61%로 4개 분기 연속 상승",
+   "eyebrow": "추이",
+   "subtitle": "분기 말 기준, 월 문의 42,000건 대상",
+   "chart": {
+    "type": "column",
+    "categories": [
+     "1Q",
+     "2Q",
+     "3Q",
+     "4Q"
+    ],
+    "series": [
+     0.34,
+     0.48,
+     0.57,
+     0.61
+    ],
+    "series_name": "자동 해결률",
+    "highlight": "4Q",
+    "number_format": "0%"
+   },
+   "notes": "1분기 34%에서 시작해 2분기 48%, 3분기 57%, 4분기 61%로 매 분기 상승했습니다. 상승 폭은 점차 줄어드는 추세로, 추가 개선은 지식베이스 연동 등 다음 단계 과제에 달려 있습니다."
+  },
+  {
+   "layout": "comparison",
+   "title": "응답시간 4시간에서 35초로 단축, CSAT 0.3점 상승",
+   "left": {
+    "heading": "도입 전",
+    "bullets": [
+     "평균 응답시간 4시간",
+     "자동 해결률 0%",
+     "CSAT 4.1"
+    ]
+   },
+   "right": {
+    "heading": "도입 1년 후",
+    "bullets": [
+     "평균 응답시간 35초",
+     "자동 해결률 61%",
+     "CSAT 4.4"
+    ]
+   },
+   "notes": "응답 속도가 빨라지면서 고객 만족도도 함께 올랐습니다. 자동화가 고객 경험을 해치지 않았다는 점이 핵심입니다."
+  },
+  {
+   "layout": "metrics",
+   "title": "상담사 1인당 처리량 38% 증가, 연간 9.8억 원 절감",
+   "eyebrow": "운영",
+   "subtitle": "도입 전 대비",
+   "metrics": [
+    {
+     "value": "42,000건",
+     "label": "월 문의량",
+     "sublabel": "자동 해결 61%"
+    },
+    {
+     "value": "+38%",
+     "label": "상담사 1인당 처리량",
+     "sublabel": "도입 전 대비"
+    },
+    {
+     "value": "9.8억 원",
+     "label": "연간 비용 절감",
+     "sublabel": "도입 1년 기준"
+    }
+   ],
+   "notes": "챗봇이 월 문의의 61%를 처리하면서 상담사 1인당 처리량이 38% 늘었습니다. 연간 비용 절감액은 9.8억 원입니다."
+  },
+  {
+   "layout": "section",
+   "number": "02",
+   "title": "다음 단계",
+   "subtitle": "2년차 확장 과제"
+  },
+  {
+   "layout": "diagram",
+   "title": "2년차는 음성·지식베이스·다국어로 적용 범위 확장",
+   "eyebrow": "다음 단계",
+   "subtitle": "채널 · 지식 · 언어",
+   "diagram": {
+    "type": "hierarchy",
+    "nodes": [
+     {
+      "title": "AI 고객지원 2년차"
+     },
+     {
+      "title": "음성 채널 확장",
+      "desc": "채널"
+     },
+     {
+      "title": "사내 지식베이스 연동",
+      "desc": "답변 품질"
+     },
+     {
+      "title": "다국어 지원",
+      "desc": "영어 · 일본어"
+     }
+    ]
+   },
+   "notes": "다음 단계는 세 가지입니다. 음성 채널로 확장하고, 영어와 일본어를 지원하며, 사내 지식베이스와 연동해 답변 범위를 넓힙니다."
+  },
+  {
+   "layout": "closing",
+   "title": "감사합니다",
+   "subtitle": "질의응답"
+  }
+ ],
+ "title_style": "assertion"
+}
