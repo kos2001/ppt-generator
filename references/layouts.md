@@ -61,7 +61,7 @@ fastest way to land "here are the numbers that matter."
 One large pulled quote with attribution. For a customer voice, a principle, or
 a mission statement. Give it its own slide — the whitespace is the point.
 - `quote` (req), `attribution`, `title`
-- On bar-style templates (e.g. `samsung`, `report`) it draws the same header bar
+- On bar-style templates (e.g. `standard`, `report`) it draws the same header bar
   as the other content slides — pass a short `title` for it (e.g. "맺는 말") — so
   the quote slide stays on-template instead of floating on a bare field. On the
   other templates it remains a clean, header-less full-field quote.

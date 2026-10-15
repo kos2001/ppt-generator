@@ -116,13 +116,13 @@ misaligned).
 {"op": "fit_image", "slide": 3, "shape": 0, "into_shape": 2, "fit": "contain"}
 
 // Or snap into a named template's content box (under header, above footer):
-{"op": "fit_image", "slide": 2, "shape": 0, "template": "samsung", "fit": "contain"}
+{"op": "fit_image", "slide": 2, "shape": 0, "template": "standard", "fit": "contain"}
 ```
 | Field | Required | Notes |
 |-------|----------|-------|
 | `slide`, `shape` | yes | The picture to refit. |
 | `fit` | no | `contain` / `cover` / `stretch` (default `cover`). |
-| `template` | no | Fit into this template's standard content box (e.g. `samsung`), sized to the deck's actual slide dimensions. Box precedence: `template` > `into_shape` > inch box > whole slide. |
+| `template` | no | Fit into this template's standard content box (e.g. `standard`), sized to the deck's actual slide dimensions. Box precedence: `template` > `into_shape` > inch box > whole slide. |
 | `into_shape` | no | Fit into this shape's box instead of the whole slide. |
 | `left_in`+`top_in`+`width_in`+`height_in` | no | An explicit inch box instead of the whole slide. |
 
@@ -154,12 +154,12 @@ explicit inch coordinates.
 
 // Or drop into a named template's content box:
 {"op": "add_image", "slide": 5, "image": "chart.png",
- "template": "samsung", "fit": "contain"}
+ "template": "standard", "fit": "contain"}
 ```
 | Field | Required | Notes |
 |-------|----------|-------|
 | `image` | yes | Path to an image file. |
-| `template` | no | Fit into this template's standard content box (e.g. `samsung`), sized to the deck's slide dimensions. Box precedence: `template` > `into_shape` > inch box. |
+| `template` | no | Fit into this template's standard content box (e.g. `standard`), sized to the deck's slide dimensions. Box precedence: `template` > `into_shape` > inch box. |
 | `into_shape` | no | Index of an existing shape whose box (left/top/width/height) the image is fitted into — e.g. a template "photo here" rectangle. Found via `inspect_pptx.py`. |
 | `replace_target` | no | With `into_shape`, delete that placeholder shape after reading its box (default `false`). |
 | `left_in`, `top_in` | no | Position in inches when no `into_shape` (default 1, 1). |
@@ -206,14 +206,14 @@ the deck and its slide count intact.
 ```json
 // Typical recipe per foreign image slide: pull the picture under the header,
 // then brand it. Run a renumber_pages at the end to unify page numbers.
-{"op": "fit_image", "slide": 3, "shape": 0, "template": "samsung", "fit": "contain"}
-{"op": "add_chrome", "slide": 3, "template": "samsung",
+{"op": "fit_image", "slide": 3, "shape": 0, "template": "standard", "fit": "contain"}
+{"op": "add_chrome", "slide": 3, "template": "standard",
  "eyebrow": "solutions", "title": "저장소 내 AI 코파일럿"}
 ```
 | Field | Required | Notes |
 |-------|----------|-------|
 | `slide` | yes | 1-based slide to brand. |
-| `template` | no | Template whose chrome to draw (default `samsung`). |
+| `template` | no | Template whose chrome to draw (default `standard`). |
 | `title` | no | Header title text. |
 | `eyebrow` | no | Small label above the title (rendered uppercase). |
 | `subtitle` | no | Optional line under the header. |
@@ -224,7 +224,7 @@ the deck and its slide count intact.
 Note that `fit_image` with the same `template` fits the picture into the box
 *under* the header band, so the new bar never overlaps the image. The header is
 drawn last (on top), so call `add_chrome` after `fit_image`. For templates with a
-"bar" header (e.g. `samsung`) on a full-bleed foreign slide that has its own
+"bar" header (e.g. `standard`) on a full-bleed foreign slide that has its own
 baked-in title, expect the bar title and the image's own title to both show —
 either keep the bar title short, set it to match, or omit `title`.
 

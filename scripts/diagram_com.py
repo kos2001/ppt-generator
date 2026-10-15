@@ -39,7 +39,7 @@ Usage:
         --type process --title "처리 흐름" \
         --nodes '[{"title":"수집"},{"title":"분석"},{"title":"출력"}]'
 
-Spec shape (for --spec): {"title": "...", "template": "samsung",
+Spec shape (for --spec): {"title": "...", "template": "standard",
   "slides": [{"type": "process", "title": "...", "nodes": [{"title","desc"}]}]}
 
 Requirements: desktop PowerPoint (COM-registered) + `pip install pywin32`.
@@ -82,7 +82,7 @@ SLIDE_W, SLIDE_H = 13.333 * IN, 7.5 * IN
 MARGIN = 0.92 * IN
 BAR_H = 1.0 * IN
 
-# samsung house palette (mirrors scripts/templates.py).
+# standard house palette (mirrors scripts/templates.py).
 THEME = {
     "primary": "111111", "secondary": "1428A0", "accent": "1428A0",
     "surface": "F4F5F7", "on_primary": "FFFFFF", "text": "1A1A1A",
@@ -440,7 +440,7 @@ DIAGRAMS = {
 # Chrome + slide assembly
 # --------------------------------------------------------------------------- #
 def _header(slide, title):
-    """samsung header bar: single-line white title (no eyebrow) + Confidential."""
+    """standard header bar: single-line white title (no eyebrow) + Confidential."""
     _box(slide, 0, 0, SLIDE_W, BAR_H, THEME["primary"], shape=1)  # rectangle
     _textbox(slide, MARGIN, 0, SLIDE_W - 2 * MARGIN - 3.0 * IN, BAR_H, title,
              24, THEME["on_primary"], anchor=MSO_ANCHOR_MIDDLE)
