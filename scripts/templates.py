@@ -120,16 +120,16 @@ THEMES = {
         "header_style": "bar",
         "header_label": "Confidential",  # white label at the right of the header bar; "" to disable
     },
-    # Samsung DS house style: black header bar, a thin Samsung-blue rule under
+    # Standard internal-report style: black header bar, a thin blue rule under
     # it, blue accents on a clean white body. Korean corporate/internal decks.
-    "samsung": {
-        "label": "Samsung DS",
-        "description": "Black header bar with a Samsung-blue rule, blue accents, white body, Malgun Gothic. Korean corporate/internal brand decks.",
+    "standard": {
+        "label": "Standard",
+        "description": "Black header bar with a blue rule, blue accents, white body, Malgun Gothic. Korean corporate/internal brand decks.",
         "background": "FFFFFF",
         "surface": "F4F5F7",       # light card / panel fill (matches PII cards)
         "primary": "111111",       # near-black header bar, section bg, table header
-        "secondary": "1428A0",     # Samsung blue — eyebrows, sublabels, subtitle
-        "accent": "1428A0",        # Samsung blue — metric values, accent blocks, charts
+        "secondary": "1428A0",     # Blue — eyebrows, sublabels, subtitle
+        "accent": "1428A0",        # Blue — metric values, accent blocks, charts
         "text": "1A1A1A",
         "text_muted": "6A6E76",    # 4.7:1 on the F4F5F7 cards (WCAG AA)
         "on_primary": "FFFFFF",
@@ -162,7 +162,7 @@ THEMES = {
     },
 }
 
-DEFAULT_THEME = "samsung"
+DEFAULT_THEME = "standard"
 
 # East Asian typeface written into every run's <a:ea> (Hangul/CJK glyphs come
 # from this font, not from heading_font/body_font). Malgun Gothic ships with

@@ -458,12 +458,12 @@ class AuditTests(unittest.TestCase):
         self.assertEqual(descr, ["Plant layout", "Floor plan of plant 2"])
 
     def test_section_number_stays_readable_on_dark_bleed(self):
-        spec = {"template": "samsung", "slides": [
+        spec = {"template": "standard", "slides": [
             {"layout": "section", "number": "01", "title": "Part"}]}
         slide = Presentation(render(spec)).slides[0]
         run = [r for sh in slide.shapes if sh.has_text_frame
                for p in sh.text_frame.paragraphs for r in p.runs if r.text == "01"][0]
-        bleed = THEMES["samsung"].get("bleed", THEMES["samsung"]["primary"])
+        bleed = THEMES["standard"].get("bleed", THEMES["standard"]["primary"])
         self.assertGreaterEqual(validate_spec.contrast(str(run.font.color.rgb), bleed), 3.0)
 
     def test_inspect_geometry(self):

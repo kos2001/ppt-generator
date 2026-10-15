@@ -543,7 +543,7 @@ def layout_section(slide, theme, s):
     # Full-bleed divider slide.
     add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill_hex=theme.get("bleed", theme["primary"]))
     if s.get("number"):
-        # The accent can vanish on a dark bleed (samsung: blue on black is
+        # The accent can vanish on a dark bleed (standard: blue on black is
         # 1.7:1); fall back to the bleed's text color below 3:1.
         bleed = theme.get("bleed", theme["primary"])
         num_color = (theme["accent"] if _contrast(theme["accent"], bleed) >= 3.0
@@ -718,7 +718,7 @@ def layout_metrics(slide, theme, s):
 
 def layout_quote(slide, theme, s):
     fill_background(slide, theme)
-    # Bar-style themes (e.g. samsung/report) carry a header bar on every content
+    # Bar-style themes (e.g. standard/report) carry a header bar on every content
     # slide; draw it here too so the quote slide matches the rest of the deck
     # instead of floating on a bare background. The quote then sits below the bar.
     if theme.get("header_style") == "bar":
@@ -2033,7 +2033,7 @@ def build(spec, out_path, report=True):
         fn(slide, theme, s)
         # Footers/numbers only on interior content slides, not full-bleed ones.
         if name not in ("title", "section", "closing", "image"):
-            # Themes can opt out of footer text (e.g. samsung) so only the
+            # Themes can opt out of footer text (e.g. standard) so only the
             # page number remains on the right.
             ftext = s.get("footer", footer_default)
             if not theme.get("show_footer_text", True):
