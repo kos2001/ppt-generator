@@ -12,7 +12,7 @@ local: no server, no API, native `.pptx` via [python-pptx](https://python-pptx.r
 
 ## Features
 
-- **7 templates** — `samsung` (default), `corporate`, `minimal`, `dark`,
+- **7 templates** — `standard` (default), `corporate`, `minimal`, `dark`,
   `vibrant`, `academic`, `report`; every one passes WCAG contrast checks.
 - **18 layouts** — title, section, agenda, bullets (incl. numbered), content,
   two_column, comparison, cards, metrics, big_number, quote, image, table,

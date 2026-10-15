@@ -5,7 +5,7 @@ applied uniformly across all layouts. Set it once via the spec's top-level
 `template` field; every slide restyles automatically. The same content can be
 re-rendered in any template by changing that one field.
 
-The renderer default is `samsung` (this skill's standing default — see
+The renderer default is `standard` (this skill's standing default — see
 SKILL.md). When the user names a template, use exactly that one; among the
 generic looks, `corporate` is the safe choice for business decks.
 
@@ -17,7 +17,7 @@ generic looks, `corporate` is the safe choice for business decks.
 | `vibrant` | Purple + coral, colored panels, bold | Startup pitches, marketing, launches, internal hype. Energetic, less formal. |
 | `academic` | Serif (Georgia), muted browns, brick-red accent | Lectures, research talks, reports, anything text-dense and scholarly. |
 | `report` | Black header bar with white title, no divider line, clean white body, page numbers | Formal corporate / internal reports, confidential-style documents. |
-| `samsung` | Black header bar, top-right "Confidential" classification marker, Samsung-blue accents, white body, Malgun Gothic; footer shows only the page number | Korean corporate / internal brand decks following the Samsung DS house style. |
+| `standard` | Black header bar, top-right "Confidential" classification marker, blue accents, white body, Malgun Gothic; footer shows only the page number | Korean corporate / internal brand decks following the standard internal-report style. |
 
 ## Picking a template
 

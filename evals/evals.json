@@ -18,7 +18,7 @@
           "text": "Slide count is in the 8-12 range (target ~10)"
         },
         {
-          "text": "Uses the vibrant template (theme colors/fonts match vibrant, not the samsung default)"
+          "text": "Uses the vibrant template (theme colors/fonts match vibrant, not the standard default)"
         },
         {
           "text": "Has a clear title slide and a closing slide"
@@ -34,7 +34,7 @@
       "mode": "A",
       "requires_com": false,
       "prompt": "Turn these notes into a clean deck — use the corporate template (not the usual default):\n\nQ3 engineering update. Shipped the new search backend (40% faster p95 latency). Migrated 3 of 5 services to the new platform. Incident count down from 12 to 4 quarter over quarter. Next quarter: finish migration, launch the public API, hire 2 SREs.",
-      "expected_output": "A valid .pptx in the corporate template (an explicitly NAMED template must win over the samsung default) that faithfully uses the given facts (40% faster, 12->4 incidents, 3 of 5 migrated) — ideally a metrics or chart slide — without inventing data, plus a forward-looking 'next quarter' slide.",
+      "expected_output": "A valid .pptx in the corporate template (an explicitly NAMED template must win over the standard default) that faithfully uses the given facts (40% faster, 12->4 incidents, 3 of 5 migrated) — ideally a metrics or chart slide — without inventing data, plus a forward-looking 'next quarter' slide.",
       "files": [],
       "assertions": [
         {
@@ -171,15 +171,15 @@
     },
     {
       "id": 7,
-      "name": "samsung-exec-report-korean",
+      "name": "standard-exec-report-korean",
       "mode": "A",
       "requires_com": false,
       "prompt": "임원 보고용 반기 사업 보고서 슬라이드 만들어줘. 상반기 매출 8,200억(전년比 +12%), 영업이익률 14%, 신규 고객 340곳, 하반기 목표는 매출 1조·신제품 2종 출시. 10장 정도.",
-      "expected_output": "A valid .pptx (~10 slides) in the samsung template (the user's default; not asked) for a Korean executive half-year business report, faithfully using the given figures, with an H2 goals slide.",
+      "expected_output": "A valid .pptx (~10 slides) in the standard template (the user's default; not asked) for a Korean executive half-year business report, faithfully using the given figures, with an H2 goals slide.",
       "files": [],
       "assertions": [
         {
-          "text": "Valid .pptx using the samsung template (chosen as default without asking)"
+          "text": "Valid .pptx using the standard template (chosen as default without asking)"
         },
         {
           "text": "Slide count is 8-12 (target ~10)"
@@ -191,7 +191,7 @@
           "text": "Includes an H2 goals slide (매출 1조, 신제품 2종)"
         },
         {
-          "text": "Did not ask which template to use (samsung is the standing default)"
+          "text": "Did not ask which template to use (standard is the standing default)"
         }
       ]
     },
@@ -201,7 +201,7 @@
       "mode": "B",
       "requires_com": true,
       "prompt": "이 덱 좀 정돈해 줘 — 콘텐츠 슬라이드 사이에 다른 발표의 전체화면 이미지 슬라이드가 끼어 있어서 템플릿이랑 안 맞고 페이지 번호도 엉켜 있어. 끼어든 이미지들은 회사 DRM이 걸려 있다고 가정해.",
-      "expected_output": "Every full-bleed foreign image slide is fitted into the content box and given a matching Samsung header bar (via COM, since DRM is assumed), and the whole deck is renumbered 1/N..N/N. No slides deleted (count stays 29). Only form changes.",
+      "expected_output": "Every full-bleed foreign image slide is fitted into the content box and given a matching Standard header bar (via COM, since DRM is assumed), and the whole deck is renumbered 1/N..N/N. No slides deleted (count stays 29). Only form changes.",
       "files": [
         "evals/fixtures/semiconductor-outlook.orig-29.pptx"
       ],
@@ -213,7 +213,7 @@
           "text": "Every slide carries a sequential page number of the form 'i / 29'"
         },
         {
-          "text": "The foreign full-bleed image slides each received a Samsung header bar"
+          "text": "The foreign full-bleed image slides each received a Standard header bar"
         },
         {
           "text": "Operated via the PowerPoint COM path (resize_pptx_com.py), consistent with the DRM assumption"
@@ -229,7 +229,7 @@
       "mode": "B",
       "requires_com": true,
       "prompt": "semiconductor-outlook 덱 수정해 줘",
-      "expected_output": "On a bare '수정' request the deck is unified to the samsung template and renumbered with NO slides deleted and NO keep/remove question asked — every slide is kept and brought on-brand. Deletion happens only on an explicit '삭제' request (which still gets a quick confirm).",
+      "expected_output": "On a bare '수정' request the deck is unified to the standard template and renumbered with NO slides deleted and NO keep/remove question asked — every slide is kept and brought on-brand. Deletion happens only on an explicit '삭제' request (which still gets a quick confirm).",
       "files": [
         "evals/fixtures/semiconductor-outlook.orig-29.pptx"
       ],
@@ -238,7 +238,7 @@
           "text": "No slides were deleted — physical slide count is preserved (deletion only on an explicit 삭제 request)"
         },
         {
-          "text": "Kept every slide and unified the off-topic/foreign slides to the samsung template WITHOUT asking a keep/remove question"
+          "text": "Kept every slide and unified the off-topic/foreign slides to the standard template WITHOUT asking a keep/remove question"
         },
         {
           "text": "Applied the safe reversible fixes (branding/fit and renumbering) rather than freezing or interrogating"
