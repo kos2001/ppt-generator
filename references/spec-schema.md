@@ -12,7 +12,7 @@ python scripts/build_pptx.py spec.json -o deck.pptx
 
 | Field | Type | Default | Notes |
 |-------|------|---------|-------|
-| `template` | string | `"samsung"` | One of the template names (see `templates.md`). |
+| `template` | string | `"standard"` | One of the template names (see `templates.md`). |
 | `title` | string | `"presentation"` | Used for the default output filename. |
 | `footer` | string | — | Footer text shown on interior content slides. Per-slide `footer` overrides it. |
 | `slide_numbers` | bool | `true` | Show page numbers on interior content slides. |

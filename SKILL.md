@@ -12,7 +12,7 @@ description: >-
   pyramid, funnel, timeline, branching flowchart ("다이어그램/플로우차트/조직도/
   순서도 그려줘"). FIT images to a template box without distortion ("템플릿
   크기에 맞춰"). RESTYLE into another template (corporate, minimal, dark,
-  vibrant, academic, samsung, report). READ/EXTRACT text, tables, chart data,
+  vibrant, academic, standard, report). READ/EXTRACT text, tables, chart data,
   images ("내용 추출", "이 ppt 읽어줘"). Handles ordinary .pptx via python-pptx
   and corporate DRM/EDM decks via authorized PowerPoint COM. Produces a real,
   fully editable .pptx — not a description of one.
@@ -124,13 +124,13 @@ A deck is expensive to redo, so the few things that shape *every* slide are
 worth getting right. But most of them are already fixed for this user, so the
 confirm collapses to a single lean question — and often to none:
 
-- **Template / look** — **default to `samsung`** for this user: never ask and
+- **Template / look** — **default to `standard`** for this user: never ask and
   never offer the catalog when no template is named. **But an explicitly named
   template wins** — "dark 템플릿으로", "use the corporate template", "make it
   vibrant" → build in exactly that one. The catalog in
   `references/templates.md` is for those explicit requests and for restyling, not
   a pre-build menu. (Only treat a template *name* as a choice; "a clean corporate
-  deck" uses "corporate" as an adjective → still samsung.)
+  deck" uses "corporate" as an adjective → still standard.)
 - **Length** — default **~10 slides** (tight 8–14) when unspecified. **When the
   user names a number** ("8장", "about 12 slides"), that's a target to *hit*
   within ±1 — and section dividers, an overview/agenda, and the closing all count
@@ -143,7 +143,7 @@ confirm collapses to a single lean question — and often to none:
   user gave a document/notes, extract the structure from it; don't invent facts.
 
 **So:** if the request already implies topic + roughly who/how long, **just
-build** and name the choices you made ("samsung·10장·일반 청중 기준으로 만들었어요
+build** and name the choices you made ("standard·10장·일반 청중 기준으로 만들었어요
 — 길이/대상 바꿀 점 있으면 말씀해 주세요") so the user can course-correct in one
 reply. Only when length *and* audience are both genuinely unclear, ask **one**
 consolidated question with the defaults pre-filled as a one-tap answer — e.g.
@@ -156,10 +156,10 @@ confirmation.
 
 ### 2. Choose a template
 
-**Default to `samsung`** (see §1) — don't deliberate over the template when the
+**Default to `standard`** (see §1) — don't deliberate over the template when the
 user named none. Only an explicitly named template overrides it. The full
 catalog in `references/templates.md` is for those explicit requests and for
-restyling: `samsung` · `corporate` · `minimal` · `dark` · `vibrant` ·
+restyling: `standard` · `corporate` · `minimal` · `dark` · `vibrant` ·
 `academic` · `report`.
 
 ### 3. Design the slides as a spec
@@ -406,23 +406,23 @@ read "/ 12" may physically hold 29 slides. Treat the physical count from
 each slide as physical `position / total`), tells you whether foreign image
 slides snuck in, and prevents off-by-N edits when you address shapes by slide
 index. Note the real total in your first report. Then **unify the whole deck to
-the samsung template — don't ask, just do it.**
+the standard template — don't ask, just do it.**
 
 **Simplified 수정 rules (the user's standing instruction — follow them exactly):**
 
 1. **Off-topic slides too → unify, never interrogate.** Even when slides from a
    *different topic* are mixed in (a band of foreign image slides from another
    deck), do **not** ask whether to keep or remove them. Keep every slide and
-   bring the whole deck to the same samsung look, then renumber `1/N..N/N` by
+   bring the whole deck to the same standard look, then renumber `1/N..N/N` by
    physical position. Unify; don't remove. (Deletion happens only when the user
    *explicitly* says "삭제해 줘" — and that one case still needs a quick confirm.)
 2. **Image slides → assume DRM, use COM only.** Don't try python-pptx on them.
-   Run `resize_pptx_com.py` to fit each picture into the samsung content box and
-   apply the samsung header/footer, then renumber. It reads no image pixels, so
-   it works even under DRM. (Text/native slides are already samsung — just
+   Run `resize_pptx_com.py` to fit each picture into the standard content box and
+   apply the standard header/footer, then renumber. It reads no image pixels, so
+   it works even under DRM. (Text/native slides are already standard — just
    confirm and renumber.)
 3. **Plain words to the user — no jargon.** When reporting what you did, never
-   say "chrome" or "branding". Use everyday phrasing: "삼성 템플릿 적용",
+   say "chrome" or "branding". Use everyday phrasing: "기본 템플릿 적용",
    "머리말·꼬리말 맞춤", "페이지 번호 정리". (The script flag is still `--chrome`
    on the command line; just don't surface that word to the user.)
 4. **Reply in the user's language.** Mirror whatever language the request used
@@ -432,12 +432,12 @@ the samsung template — don't ask, just do it.**
    text. So **do not pass `--footer`** on the COM `--chrome`/`wrap_images` path,
    and strip any existing footer text shapes (named `tmpl_chrome_footer`) so
    only the page number (`tmpl_chrome_pageno`) remains. A top-of-slide
-   classification marker (samsung's top-right "Confidential", a *header*) is a
+   classification marker (standard's top-right "Confidential", a *header*) is a
    separate element and is left alone — this rule is about the footer only.
 
 So the standard 수정 pass is: back up the `.pptx` and delete any stale scratch
 (`NAME.spec.json` / `NAME.grid.png` / `NAME.thumbs/`) → inspect → confirm physical
-count → fit any image slides into the samsung box via COM and apply the samsung
+count → fit any image slides into the standard box via COM and apply the standard
 header/footer (footer shows the page number only) → renumber the whole deck →
 report in plain language. No keep/remove question.
 
@@ -495,13 +495,13 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
   python scripts/resize_pptx_com.py deck.pptx --template # fit all into template box
   ```
 
-  `--template [NAME]` (default `samsung`) fits each picture into the template
+  `--template [NAME]` (default `standard`) fits each picture into the template
   content box; `--box WxH`, `--scale F`, `--width/--height` are the other modes;
   `--fit contain|stretch`. In-place saves back up the original first.
 
   `--chrome [NAME]` — **add the template's header/footer chrome** to a DRM deck.
   `--template` only moves picture *frames*; `--chrome` inserts *new native
-  shapes* (header bar, `SAMSUNG DS` brand marker, page numbers; `--eyebrow` is
+  shapes* (header bar, `Confidential` classification marker, page numbers; `--eyebrow` is
   optional but **leave `--footer` off** — the footer shows only the page number)
   on every slide, mirroring the bar-style chrome in
   `build_pptx.py`. PowerPoint decrypts in the authorized session, the shapes are
@@ -512,11 +512,11 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
   image-deck flow is two passes: fit the images, then add chrome:
 
   ```bash
-  python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
-  python scripts/resize_pptx_com.py tmp.pptx  --chrome  samsung --out final.pptx
+  python scripts/resize_pptx_com.py deck.pptx --template standard --out tmp.pptx
+  python scripts/resize_pptx_com.py tmp.pptx  --chrome  standard --out final.pptx
   ```
 
-  **Footer holds the page number only** — do not pass `--footer` (and samsung
+  **Footer holds the page number only** — do not pass `--footer` (and standard
   uses no eyebrow, so skip `--eyebrow` too). The bar's top-right marker and the
   page number are added automatically; the footer band stays page-number-only.
 
@@ -539,8 +539,8 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
 
   ```bash
   # mixed DRM deck: fit images, then chrome ONLY the foreign image slides 3 & 5
-  python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
-  python scripts/resize_pptx_com.py tmp.pptx  --chrome samsung --slides 3,5 \
+  python scripts/resize_pptx_com.py deck.pptx --template standard --out tmp.pptx
+  python scripts/resize_pptx_com.py tmp.pptx  --chrome standard --slides 3,5 \
       --no-numbers --out final.pptx
   ```
 
@@ -576,12 +576,12 @@ rights. Two bundled COM scripts (Windows only; `pip install pywin32`):
   # already-fitted slides use (measure one with --list) so all content lines up
   python scripts/resize_pptx_com.py deck.pptx --slides 1-3,13-24,34-35 \
       --box 34.6x19.3 --left 5.27 --top 3.89 --out a.pptx
-  python scripts/resize_pptx_com.py a.pptx --chrome samsung --slides 1-3,13-24,34-35 \
+  python scripts/resize_pptx_com.py a.pptx --chrome standard --slides 1-3,13-24,34-35 \
       --no-numbers --out b.pptx
-  python scripts/resize_pptx_com.py b.pptx --renumber samsung --out final.pptx
+  python scripts/resize_pptx_com.py b.pptx --renumber standard --out final.pptx
   ```
 
-  On a deck with no already-fitted slides to match, `--template samsung` (which
+  On a deck with no already-fitted slides to match, `--template standard` (which
   reserves the header area automatically) is fine for the fit pass instead of an
   explicit `--box`. Always render a `thumbnail.py` grid of the result and confirm
   the new bars line up with the native ones before promoting it over the target.
@@ -665,7 +665,7 @@ a template placeholder (`into_shape`) or inch box, `replace_image` keeps the
 existing picture's frame, and `fit_image` resizes a picture already on the slide
 to a box — defaulting to the whole slide, so it snaps full-page images to fill
 the slide template exactly. `add_image`/`fit_image` also accept a `template`
-field (e.g. `"template": "samsung"`) that fits the image into that template's
+field (e.g. `"template": "standard"`) that fits the image into that template's
 standard **content box** — the region under the header bar and above the
 footer/page-number band, sized to the deck's actual slide dimensions — so an
 edited image lands exactly where the template wants it. All take a `fit` mode
@@ -713,8 +713,8 @@ For the unprotected path:
 
 ```jsonc
 // edits.json — brand slides 3-5, then renumber the whole deck
-{"op": "fit_image", "slide": 3, "shape": 0, "template": "samsung", "fit": "contain"},
-{"op": "add_chrome", "slide": 3, "template": "samsung", "eyebrow": "solutions", "title": "..."},
+{"op": "fit_image", "slide": 3, "shape": 0, "template": "standard", "fit": "contain"},
+{"op": "add_chrome", "slide": 3, "template": "standard", "eyebrow": "solutions", "title": "..."},
 // …repeat fit_image + add_chrome for each foreign slide…
 {"op": "renumber_pages"}   // run last: re-stamps every "N / M" to physical order over the new total
 ```
@@ -732,16 +732,16 @@ chrome" path is bundled as one command, so you don't re-orchestrate it each time
 
 ```bash
 # from an image-only deck (one picture per slide):
-python scripts/wrap_images.py --from-pptx deck.pptx --template samsung -o out.pptx
+python scripts/wrap_images.py --from-pptx deck.pptx --template standard -o out.pptx
 # or from a folder of images (natural-sorted slide1, slide2, … slide10):
-python scripts/wrap_images.py --images ./imgs --template samsung -o out.pptx
+python scripts/wrap_images.py --images ./imgs --template standard -o out.pptx
 ```
 
 It renders a chrome-only frame deck in the chosen template (header bar, brand
 marker, page numbers), then fits each image into the body (`--fit contain`
 default, `cover` to fill-and-crop). Output slide count = number of images, so
 the deck's length is preserved. The footer shows only the page number — leave
-`--footer` off (and samsung uses no eyebrow). It does **not** make text editable
+`--footer` off (and standard uses no eyebrow). It does **not** make text editable
 — for that, use the recreate path above.
 
 **Escape hatch — raw OOXML.** For changes python-pptx can't reach (theme colors,

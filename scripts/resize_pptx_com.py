@@ -33,8 +33,8 @@ Workflow (do these in order):
     # 3) Resize. Examples:
     #    fit EVERY picture into the template's content box (house default):
     python scripts/resize_pptx_com.py deck.pptx --template
-    #    one picture into the samsung template box, on slide 3:
-    python scripts/resize_pptx_com.py deck.pptx --slide 3 --picture 1 --template samsung
+    #    one picture into the standard template box, on slide 3:
+    python scripts/resize_pptx_com.py deck.pptx --slide 3 --picture 1 --template standard
     #    one picture to an exact width (height follows, aspect kept):
     python scripts/resize_pptx_com.py deck.pptx --slide 3 --picture 1 --width 10
     #    scale every picture to 80%:
@@ -48,10 +48,10 @@ Workflow (do these in order):
     #    Unlike --template (frame geometry only), --chrome ADDS native shapes:
     #    a header bar, brand marker, and page numbers on every slide.
     #    Convention: leave --footer off so the footer shows only the page number.
-    python scripts/resize_pptx_com.py deck.pptx --chrome samsung
+    python scripts/resize_pptx_com.py deck.pptx --chrome standard
     #    Typical image-deck flow is two passes: fit the images, then chrome:
-    python scripts/resize_pptx_com.py deck.pptx --template samsung --out tmp.pptx
-    python scripts/resize_pptx_com.py tmp.pptx  --chrome  samsung --out final.pptx
+    python scripts/resize_pptx_com.py deck.pptx --template standard --out tmp.pptx
+    python scripts/resize_pptx_com.py tmp.pptx  --chrome  standard --out final.pptx
 
 Sizes are in centimeters by default (--unit cm|in|pt). In-place edits back up
 the original to <name>.bak-<timestamp>.pptx first. --chrome is idempotent: a
@@ -308,7 +308,7 @@ def cmd_resize(path, args):
 # picture frames), this ADDS native shapes + text, so it works on a DRM deck
 # the user can edit manually: PowerPoint decrypts in the authorized session,
 # the shapes are inserted, and Save() re-encrypts. Geometry mirrors the
-# samsung/report "bar" chrome in build_pptx.py so a COM-chromed deck matches a
+# standard/report "bar" chrome in build_pptx.py so a COM-chromed deck matches a
 # natively rendered one.
 # --------------------------------------------------------------------------- #
 def _bgr(hexstr):

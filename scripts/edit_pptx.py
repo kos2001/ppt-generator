@@ -421,14 +421,14 @@ def op_add_chrome(prs, op):
     chroming in physical order; override them, or run renumber_pages afterward,
     to unify numbering across slides that were chromed at different totals.
 
-    Fields: slide (required); template (default "samsung"), title, eyebrow,
+    Fields: slide (required); template (default "standard"), title, eyebrow,
     subtitle, footer, slide_no, total, page_number (default true),
     layout (marker contrast hint, default "diagram").
     """
     bp = __import__("build_pptx")
     from templates import get_theme
     slide = _slide(prs, op["slide"])
-    theme = get_theme(op.get("template", "samsung"))
+    theme = get_theme(op.get("template", "standard"))
     # build_pptx's chrome helpers read module-level canvas globals; point them at
     # this deck's real slide size so the bar and markers anchor correctly on any
     # page setup, then restore so nothing else is affected.
@@ -445,7 +445,7 @@ def op_add_chrome(prs, op):
     finally:
         bp.SLIDE_W, bp.SLIDE_H = saved
     return "add_chrome slide %d (template=%s)" % (
-        op["slide"], op.get("template", "samsung"))
+        op["slide"], op.get("template", "standard"))
 
 
 _PAGE_RE = re.compile(r"^\s*\d+\s*/\s*\d+\s*$")

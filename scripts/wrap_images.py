@@ -16,7 +16,7 @@ Usage:
     # from an existing image-only .pptx (one picture per slide):
     python wrap_images.py --from-pptx deck.pptx -o out.pptx
     # from a folder of images (natural-sorted: slide1, slide2, … slide10):
-    python wrap_images.py --images ./imgs --template samsung -o out.pptx
+    python wrap_images.py --images ./imgs --template standard -o out.pptx
     # options:
     #   --template NAME   template/theme (default: renderer default)
     #   --eyebrow TEXT    running label shown in the header bar

@@ -6,7 +6,7 @@ lean on: validity, slide count, which template was used (inferred from heading
 font + accent color), native-chart vs picture counts, table count, and per-slide
 titles. Pure python-pptx — runs anywhere, no COM.
 
-Template inference matters because the skill's standing default is samsung; an
+Template inference matters because the skill's standing default is standard; an
 eval that explicitly asks for, say, the dark template must actually produce dark,
 not silently fall back to the default. We match the deck's dominant heading font
 and accent fill against scripts/templates.py THEMES.
